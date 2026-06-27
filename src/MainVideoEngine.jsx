@@ -1,30 +1,51 @@
 import React from 'react';
-import { AbsoluteFill, Sequence } from 'remotion';
+import { AbsoluteFill, Sequence, staticFile } from 'remotion';
+import { RevealElement } from './components/RevealElement';
 
 export const MainVideoEngine = () => {
   return (
-    <AbsoluteFill style={{ backgroundColor: 'white', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+    <AbsoluteFill style={{ backgroundColor: 'white', padding: '50px', fontFamily: 'sans-serif' }}>
       
-      {/* ০ থেকে ১২০ ফ্রেম পর্যন্ত হেডিং দেখাবে */}
-      <Sequence from={0} durationInFrames={120}>
-        <h1 style={{ fontSize: '80px', fontFamily: 'sans-serif', color: '#ce1414' }}>
-          Welcome to Scene 01 Heading
-        </h1>
-      </Sequence>
+      {/* ==========================================
+          SCENE 01: আপনার দেওয়া সম্পূর্ণ ডিজাইন লেআউট
+          ========================================== */}
+      <div id="scene-01" style={{ position: 'relative', width: '100%', height: '100%' }}>
+        
+        {/* sequenceId: ১ | ৩ সেকেন্ড ধরে টাইপ হবে */}
+        <RevealElement sequenceId={1} duration={3} type="text">
+          <h1 style={{ fontSize: '80px', color: '#ce1414', margin: '10px 0' , fontFamily: 'Kalam, cursive'}}>
+            Welcome to MCP Tutorial
+          </h1>
+        </RevealElement>
 
-      {/* ১২০ থেকে ২৪০ ফ্রেম পর্যন্ত প্যারাগ্রাফ দেখাবে */}
-      <Sequence from={120} durationInFrames={120}>
-        <p style={{ fontSize: '50px', fontFamily: 'sans-serif', color: '#333' }}>
-          This is a normal paragraph entering at frame 120.
-        </p>
-      </Sequence>
+        {/* sequenceId: ২ | ১ সেকেন্ড ধরে আন্ডারলাইন ড্র হবে */}
+        <RevealElement sequenceId={2} duration={1} type="underline">
+          <div style={{ height: '6px', backgroundColor: '#10b981', width: '600px', borderRadius: '3px' }} />
+        </RevealElement>
 
-      {/* ২৪০ থেকে ৩৬০ ফ্রেম পর্যন্ত নেক্সট সিন দেখাবে */}
-      <Sequence from={240} durationInFrames={120}>
-        <h1 style={{ fontSize: '70px', fontFamily: 'sans-serif', color: 'blue' }}>
-          Scene 02: Next Content Loading...
-        </h1>
-      </Sequence>
+        {/* sequenceId: ৩ | ৩ সেকেন্ড ধরে প্যারাগ্রাফ টাইপ হবে */}
+        <RevealElement sequenceId={3} duration={3} type="text">
+          <p style={{ fontSize: '35px', color: '#333', marginTop: '30px' }}>
+            Some Context about Model Context Protocol...
+          </p>
+        </RevealElement>
+
+        {/* sequenceId: ৪ | ১.৫ সেকেন্ড ধরে ইমেজ ভেসে উঠবে */}
+        <RevealElement sequenceId={4} duration={1.5} type="image">
+          <img src={staticFile("/mcpimg.png")} alt="some-img1" style={{ width: '300px', marginTop: '20px' }} />
+        </RevealElement>
+
+        {/* sequenceId: ৫ | ১.৫ সেকেন্ড ধরে ২য় ইমেজ ভেসে উঠবে */}
+        <RevealElement sequenceId={5} duration={1.5} type="image">
+          <img src={staticFile("/mcpclients.png")} alt="some-img2" style={{ width: '300px', marginLeft: '30px' }} />
+        </RevealElement>
+
+      </div>
+
+      {/* ==========================================
+          SCENE 02: এর পরের দৃশ্য (ভবিষ্যতে যোগ করার জন্য)
+          ========================================== */}
+      {/* <div id="scene-02"> ... </div> */}
 
     </AbsoluteFill>
   );
