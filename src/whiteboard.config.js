@@ -30,7 +30,13 @@ export const paragraphAnimationConfig = {
 };
 
 
-
+// 🎯 শুধুমাত্র হেডার টেক্সটের (Heading) জন্য স্পেসিফিক কনফিগ
+export const imageAnimationConfig = {
+  speedMultiplier: 1.0,   // 🚀 হেডিং লেখার স্পিড মাল্টিপ্লায়ার
+  waveAmplitude: 16,      // 🌊 হেডিং লেখার সময় হাতের উপর-নিচ ঢেউয়ের সাইজ (পিক্সেলে)
+  waveFrequency: 0.8,     // ⚡ হেডিং এর জন্য হাত নাচার ফ্রিকোয়েন্সি 
+  microNoise: 1.5,        // ✒️ পেনের ডগার সূক্ষ্ম রিয়েলিস্টিক ভাইব্রেশন
+};
 
 
 
@@ -83,6 +89,10 @@ export const getAnimationFrames = (element, fps) => {
         Math.ceil(textLength(element) * paragraphAnimationConfig.framesPerCharacter),
       );
       speedMultiplier = paragraphAnimationConfig.speedMultiplier;
+      break;
+    case 'image': 
+      baseFrames = Math.round(fps * 3.0);
+      speedMultiplier = imageAnimationConfig.speedMultiplier;
       break;
     default:
       baseFrames = fps;

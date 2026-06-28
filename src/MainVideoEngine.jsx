@@ -5,6 +5,8 @@ import { RevealElement, RevealSequence } from './components/RevealElement';
 import { H1 } from './components/types/H1';
 import { Hr } from './components/types/Hr';
 import { P } from './components/types/P';
+import {Image} from './components/types/Image';
+
 import { ParagraphBlock } from './components/types/ParagraphBlock';
 import { ListBlock } from './components/types/ListBlock';
 import { CodingBlock } from './components/types/CodingBlock';
@@ -62,7 +64,15 @@ export const mainVideoSequence = [
     <Hr className="top-250 left-100 w-1200 h-10 text-green" />
   </RevealElement>,
 
-  <RevealElement key="paragraph" sequenceId={4}>
+  <RevealElement key="mcp-hub-image" sequenceId={4}>
+    <Image 
+      src="/mcpimg.png" 
+      alt="MCP Hub Diagram"
+      className="top-250 left-100 w-380 h-380 object-contain" 
+    />
+  </RevealElement>,
+
+  <RevealElement key="paragraph" sequenceId={5}>
     <P className="font-kalam top-350 left-100 text-4xl w-1350 leading-relaxed">
       <strong>MCP (Model Context Protocol)</strong> is a{' '}
       <span className="text-red">new standard</span>{' '}
