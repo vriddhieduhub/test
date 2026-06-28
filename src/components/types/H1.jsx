@@ -144,3 +144,5 @@ export const H1 = ({ children, color, progress, style }) => {
     </>
   );
 };
+
+H1.animationType = 'heading';

@@ -186,3 +186,5 @@ export const P = ({ children, progress, style, color }) => {
     </>
   );
 };
+
+P.animationType = 'paragraph';

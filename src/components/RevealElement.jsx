@@ -1,35 +1,60 @@
 import React from 'react';
-import { useCurrentFrame, interpolate, Img, staticFile } from 'remotion';
+import {interpolate, useCurrentFrame, useVideoConfig} from 'remotion';
+import {getAnimationFrames} from '../whiteboard.config';
 
-export const RevealElement = ({ sequenceId, duration, x, y, children }) => {
-  const frame = useCurrentFrame();
-  const fps = 30;
+export const RevealSequence = ({children}) => {
+  const {fps} = useVideoConfig();
+  const elements = React.Children.toArray(children).filter(React.isValidElement);
+  const sequenceIds = [...new Set(elements.map((element) => element.props.sequenceId))].sort(
+    (a, b) => a - b,
+  );
 
-  // সিকোয়েন্স অনুযায়ী স্টার্ট টাইম ক্যালকুলেশন
-  let startSecond = 0;
-  if (sequenceId === 1) startSecond = 0;      
-  if (sequenceId === 2) startSecond = 3;      
-  if (sequenceId === 3) startSecond = 7;      
-  if (sequenceId === 4) startSecond = 12;     
+  const timeline = new Map();
+  let nextStartFrame = 0;
 
-  const startFrame = startSecond * fps;
-  const endFrame = startFrame + (duration * fps);
+  for (const sequenceId of sequenceIds) {
+    const group = elements.filter((element) => element.props.sequenceId === sequenceId);
+    const groupFrames = Math.max(
+      ...group.map(
+        (element) => getAnimationFrames(element.props.children, fps).animationFrames,
+      ),
+    );
 
-  if (frame < startFrame) return null;
+    timeline.set(sequenceId, {startFrame: nextStartFrame});
+    nextStartFrame += groupFrames;
+  }
 
-  const isRunning = frame >= startFrame && frame <= endFrame;
-  
-  // ০ থেকে ১০০% অ্যানিমেশন প্রগ্রেস ট্র্যাকিং
-  const progress = interpolate(frame, [startFrame, endFrame], [0, 100], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
+  return elements.map((element) => {
+    const ownTiming = getAnimationFrames(element.props.children, fps);
+    const sequenceTiming = timeline.get(element.props.sequenceId);
+    return React.cloneElement(element, {...sequenceTiming, ...ownTiming});
   });
+};
+
+export const RevealElement = ({
+  startFrame = 0,
+  animationFrames = 1,
+  progressEnd = 100,
+  x,
+  y,
+  children,
+}) => {
+  const frame = useCurrentFrame();
+
+  if (frame < startFrame) {
+    return null;
+  }
+
+  const progress = interpolate(
+    frame,
+    [startFrame, startFrame + animationFrames],
+    [0, progressEnd],
+    {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'},
+  );
 
   return (
-    <div style={{ position: 'absolute', top: y, left: x }}>
-      {/* চাইল্ড কম্পোনেন্টের ভেতর প্রগ্রেস পাস করা */}
-      {React.cloneElement(children, { progress })}
-
+    <div style={{position: 'absolute', top: y, left: x}}>
+      {React.cloneElement(children, {progress})}
     </div>
   );
 };

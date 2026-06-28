@@ -93,3 +93,5 @@ export const Hr = ({ color, progress, style }) => {
     </>
   );
 };
+
+Hr.animationType = 'underline';
