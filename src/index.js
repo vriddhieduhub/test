@@ -1,3 +1,5 @@
+import './master.css';
+import './index.css';
 import { registerRoot } from "remotion";
 import { RemotionRoot } from "./Root";
 import { loadFont } from '@remotion/google-fonts/Kalam';

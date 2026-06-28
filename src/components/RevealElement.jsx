@@ -1,7 +1,7 @@
 import React from 'react';
 import { useCurrentFrame, interpolate, Img, staticFile } from 'remotion';
 
-export const RevealElement = ({ sequenceId, duration, type, x, y, children }) => {
+export const RevealElement = ({ sequenceId, duration, x, y, children }) => {
   const frame = useCurrentFrame();
   const fps = 30;
 
