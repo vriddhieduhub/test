@@ -243,6 +243,9 @@
    -------------------------------------------------- */
 
 /* --- 🔹 ক) সলিড ৪ পিক্সেল স্ট্যান্ডার্ড আন্ডারলাইন --- */
+u {
+   text-decoration: none;
+}
 .underline-red          { border-bottom: 4px solid #e11d48; } /* Rose-600 */
 .underline-blue         { border-bottom: 4px solid #1d4ed8; } /* Blue-700 */
 .underline-green        { border-bottom: 4px solid #10b981; } /* Emerald-500 */

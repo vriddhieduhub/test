@@ -66,7 +66,7 @@ export const H1 = ({ children, className = '', color, progress, style: inlineSty
   );
 
   // ২. আপনার নিখুঁত বেস অফসেট (পেনের নিব কালির লাইনে লক করার জন্য)
-  const writeOffsetX = 25;         
+  const writeOffsetX = -10;         
   const writeOffsetY = 45;          
 
   // 🎯 হাত এবং মাস্কিংয়ের জন্য লিনিয়ার পিক্সেল প্রগ্রেস ক্যালকুলেশন

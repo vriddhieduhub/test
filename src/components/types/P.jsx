@@ -3,8 +3,7 @@ import { useCurrentFrame, Img, staticFile, interpolate } from 'remotion';
 import { paragraphAnimationConfig } from '../../whiteboard.config';
 import { parseClassNameToStyle } from '../../utils/styleResolver';
 
-
-// চাইল্ড নোড বা নেস্টেড স্প্যানগুলোকে ভেঙে তাদের নিজস্ব className ও style অক্ষুণ্ণ রেখে ফ্ল্যাট ক্যারেক্টার ম্যাপ তৈরি করার পিউর পার্সার
+// চাইল্ড নোড বা নেস্টেড স্প্যানগুলোকে ভেঙে ফ্ল্যাট ক্যারেক্টার ম্যাপ তৈরি করার পিউর পার্সার
 const flattenNodes = (children) => {
   const result = [];
   const traverse = (node, inheritedProps = { style: {}, className: '' }) => {
@@ -21,7 +20,6 @@ const flattenNodes = (children) => {
     } else if (React.isValidElement(node)) {
       const nodeProps = node.props || {};
       
-      // প্যারেন্ট এবং চাইল্ডের স্টাইল ও ক্লাসনেম একদম ক্লিনলি মার্জ করা হচ্ছে
       let combinedStyle = { ...inheritedProps.style, ...nodeProps.style };
       let combinedClassName = [inheritedProps.className, nodeProps.className].filter(Boolean).join(' ');
 
@@ -39,6 +37,7 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
   const containerRef = useRef(null);
   const [charPositions, setCharPositions] = useState([]);
 
+  // ক্লাসনেম ও ইনলাইন স্টাইল মার্জ
   const parsedStyle = parseClassNameToStyle(className);
   const style = { ...parsedStyle, ...inlineStyle };
 
@@ -46,11 +45,11 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
   const fontSize = style?.fontSize ? parseFloat(style.fontSize) : 48;
   const fontFamily = style?.fontFamily || "'Kalam', cursive, sans-serif";
 
-  // ১. ইনলাইন চাইল্ড স্ট্রাকচারকে ভেঙে ক্যারেক্টার অ্যারে তৈরি করা
+  // চাইল্ড স্ট্রাকচার ভেঙে ক্যারেক্টার অ্যারে তৈরি
   const flatChars = useMemo(() => flattenNodes(children), [children]);
   const totalChars = flatChars.length;
 
-  // ২. রি-রেন্ডার হওয়ার পর ব্রাউজারের ডম (DOM) লেআউট থেকে অক্ষরের নিখুঁত X-Y পজিশন ম্যাপ বের করা
+  // 🎯 আসল ফিক্স: ব্রাউজারের DOM লেআউট থেকে অক্ষরের রিয়েল-টাইম X-Y পজিশন ম্যাপ বের করা
   useEffect(() => {
     if (!containerRef.current) return;
     const spans = containerRef.current.querySelectorAll('.live-char');
@@ -58,6 +57,7 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
     
     spans.forEach((span) => {
       positions.push({
+        // span.offsetLeft + span.offsetWidth দিলে অক্ষরের ঠিক ডান প্রান্তের (ডগা) পিক্সেল পাওয়া যায়
         x: span.offsetLeft + span.offsetWidth, 
         y: span.offsetTop,                     
         width: span.offsetWidth,
@@ -65,9 +65,9 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
       });
     });
     setCharPositions(positions);
-  }, [flatChars, totalChars]);
+  }, [flatChars, totalChars, frame]); // 👈 frame ডিফেন্ডেন্সি দেওয়া হলো যাতে প্রতি ফ্রেমে পজিশন রিয়েল-টাইম রি-ক্যালকুলেট হয়
 
-  // ৩. স্পিড মাল্টিপ্লায়ার প্রগ্রেস রিম্যাপ
+  // স্পিড মাল্টিপ্লায়ার প্রগ্রেস রিম্যাপ
   const adjustedProgress = interpolate(
     progress * animationConfig.speedMultiplier,
     [0, 100],
@@ -77,7 +77,7 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
 
   if (adjustedProgress === 0) return null;
 
-  // ৪. রিয়েল-টাইম ক্যারেক্টার পজিশন ট্র্যাকিং
+  // রিয়েল-টাইম ক্যারেক্টার পজিশন ট্র্যাকিং
   const globalCharProgress = (adjustedProgress / 100) * totalChars;
   const currentCharIndex = Math.min(Math.floor(globalCharProgress), totalChars - 1);
   const charRemainder = globalCharProgress - currentCharIndex;
@@ -90,31 +90,28 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
     const c1 = charPositions[currentCharIndex];
     const c2 = charPositions[Math.min(currentCharIndex + 1, totalChars - 1)];
 
-    // যদি c2 এলিমেন্টটি নিচের লাইনে র‍্যাপ হয়, তবে হাত এক ঝটকায় ২য় লাইনের শুরুতে নেমে আসবে
-    if (c2.y > c1.y) {
-      handBaseX = charRemainder < 0.2 ? c1.x : c2.x - c2.width;
-      handBaseY = charRemainder < 0.2 ? c1.y : c2.y;
-    } else {
-      handBaseX = c1.x + (c2.x - c1.x) * charRemainder;
-      handBaseY = c1.y + (c2.y - c1.y) * charRemainder;
+    // যদি c2 এলিমেন্টটি নিচের লাইনে র‍্যাপ হয়, তবে হাত এক ফ্রেমেই নিখুঁতভাবে নিচের লাইনে নেমে আসবে
+    if (c2 && c1 && c2.y > c1.y) {
+      handBaseX = charRemainder < 0.1 ? c1.x : c2.x - c2.width;
+      handBaseY = charRemainder < 0.1 ? c1.y : c2.y;
+    } else if (c1) {
+      handBaseX = c1.x + ((c2 ? c2.x : c1.x) - c1.x) * charRemainder;
+      handBaseY = c1.y;
     }
   }
 
-  // পেনের নিবের রাইটিং অফসেট
+  // পেনের নিবের পারফেক্ট রাইটিং অফসেট
   const writeOffsetX = -18;
   const writeOffsetY = fontSize * 0.75; 
 
-  // বাইরে থেকে আসা সিএসএস পজিশন প্লাগ-ইন
+  // বাইরে থেকে সিএসএস-এ আসা পজিশন প্লাগ-ইন
   const externalLeft = style?.left ? parseFloat(style.left) : 0;
   const externalTop = style?.top ? parseFloat(style.top) : 0;
 
   const handX = handBaseX + writeOffsetX + externalLeft;
 
-  // ==========================================================
-  // 🌊 প্যারাগ্রাফের জন্য লাইট-অ্যামপ্লিচিউড সাইন-ওয়েভ ও র্যান্ডমনেস
-  // ==========================================================
+  // 🌊 প্যারাগ্রাফের জন্য সাইন-ওয়েভ ও র্যান্ডমনেস
   const isWritingActive = adjustedProgress > 0 && adjustedProgress < 100;
-
   const wave1 = Math.sin(frame * animationConfig.waveFrequency);
   const wave2 = Math.cos(frame * (animationConfig.waveFrequency * 0.55));
   
@@ -129,9 +126,10 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
 
   return (
     <>
-      {/* ১. প্যারাগ্রাফ রেন্ডারার নোড বক্স (পিউর পি ট্যাগ লেআউট) */}
+      {/* ১. প্যারাগ্রাফ রেন্ডারার নোড বক্স */}
       <p
         ref={containerRef}
+        className={className}
         style={{
           ...style,
           position: 'absolute',
@@ -150,7 +148,6 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
         {flatChars.map((item, idx) => {
           const isVisible = idx < charsToShow;
           
-          // স্ট্রং, ইটালিক বা আন্ডারলাইন ট্যাগের জেনুইন রিঅ্যাক্ট রি-বিল্ডার ব্যাকআপ
           let Tag = 'span';
           if (item.type === 'strong' || item.type === 'b') Tag = 'strong';
           if (item.type === 'i' || item.type === 'em') Tag = 'i';
@@ -164,7 +161,8 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
                 ...item.style,
                 display: 'inline-block',
                 whiteSpace: 'pre',
-                visibility: isVisible ? 'visible' : 'hidden',
+                // 🚀 ফিক্স: ক্যারেক্টারগুলো ডম-এ স্পেস ধরে রাখবে যাতে শুরুতে offsetLeft ভুল না আসে
+                opacity: isVisible ? 1 : 0, 
               }}
             >
               {item.char}
@@ -182,7 +180,7 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
             position: 'absolute',
             left: `${handX + humanNoiseX}px`,
             top: `${handY}px`,
-            width: '140px', 
+            width: '180px', 
             zIndex: 100,
             pointerEvents: 'none',
           }}
