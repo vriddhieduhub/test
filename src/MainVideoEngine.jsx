@@ -2,6 +2,7 @@ import React from 'react';
 import { AbsoluteFill, Sequence, staticFile } from 'remotion';
 import { RevealElement } from './components/RevealElement';
 
+import { H1 } from './components/types/H1';
 import { HeadingBlock } from './components/types/HeadingBlock';
 import { ParagraphBlock } from './components/types/ParagraphBlock';
 import { ListBlock } from './components/types/ListBlock';
@@ -15,11 +16,9 @@ export const MainVideoEngine = () => {
         
         {/* সিকোয়েন্স ১: হেডিং ব্লক (টাইমিং: ৩ সেকেন্ড) */}
         <RevealElement sequenceId={1} duration={5} type="heading" x={60} y={60}>
-          
-          <HeadingBlock 
-            text="Welcome to MCP Thank you" 
-            style={{ top: '80px', left: '100px', fontSize: '100px', color: '#1714ce' }} 
-          />
+            <H1 style={{ top: '80px', left: '100px', fontSize: '100px', color: '#1714ce' }}>
+                Welcome to MCP Thank you
+            </H1>
         </RevealElement>
         
 

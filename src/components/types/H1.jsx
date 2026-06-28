@@ -22,8 +22,12 @@ const calculateAbsolutePositions = (text, fontSize, fontFamily) => {
   return positions;
 };
 
-export const HeadingBlock = ({ text, color, progress, style }) => {
+// ফিক্স: 'text' প্রপ্সের জায়গায় রিঅ্যাক্টের 'children' প্রপ্স নেওয়া হলো যাতে নরমাল HTML এর মতো রিড করা যায়
+export const H1 = ({ children, color, progress, style }) => {
   const frame = useCurrentFrame();
+
+  // যদি চাইল্ড হিসেবে কিছু না পাঠানো হয়, তবে সেফটি রিটার্ন
+  const text = typeof children === 'string' ? children : '';
 
   // ==========================================================
   // 🎛️ আপনার কাস্টম হোয়াইটবোর্ড কন্ট্রোল প্যানেল (Config)
@@ -51,7 +55,7 @@ export const HeadingBlock = ({ text, color, progress, style }) => {
   const xPositions = calculateAbsolutePositions(text, fontSize, fontFamily);
 
   // ২. আপনার নিখুঁত বেস অফসেট (পেনের নিব কালির লাইনে লক করার জন্য)
-  const writeOffsetX = -35;         
+  const writeOffsetX = 25;         
   const writeOffsetY = 45;          
 
   // 🎯 হাত এবং মাস্কিংয়ের জন্য লিনিয়ার পিক্সেল প্রগ্রেস ক্যালকুলেশন
@@ -97,7 +101,7 @@ export const HeadingBlock = ({ text, color, progress, style }) => {
 
   const handY = writeOffsetY + compoundWaveY + humanNoiseY + externalTop;
 
-  // ফিক্স: 'P' অক্ষরের হেলানো কার্ভ যাতে না কাটে, তাই ১০০% রিভিল সেফটি ইনসেট
+  // ಫಿಕ್ಸ್: শেষ অক্ষরের হেলানো কার্ভ যাতে না কাটে, তাই ১০০% রিভিল সেফটি ইনসেট
   const maskRightInset = adjustedProgress >= 100 ? 0 : Math.max(0, totalTextWidth - handBaseX);
 
   return (
