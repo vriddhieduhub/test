@@ -23,7 +23,8 @@
     "dev": "remotion studio",
     "build": "remotion bundle",
     "upgrade": "remotion upgrade",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "snapshot": "npx ts-node tools/generate-snapshot.ts"
   },
   "sideEffects": [
     "*.css"
