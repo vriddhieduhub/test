@@ -11,14 +11,25 @@ import { CodingBlock } from './components/types/CodingBlock';
 
 export const mainVideoSequence = [
   <RevealElement key="heading" sequenceId={1} x={60} y={60}>
-    <H1 style={{ top: '80px', left: '100px', fontSize: '100px', color: '#1714ce' }}>
+    <H1
+      className="font-caveat"
+      style={{ top: '80px', left: '100px', fontSize: '100px', color: '#1714ce' }}
+    >
       Welcome to MCP Thank you
     </H1>
   </RevealElement>,
-  <RevealElement key="underline" sequenceId={2} x={60} y={120}>
+  <RevealElement key="second-heading" sequenceId={2} x={60} y={155}>
+    <H1
+      className="font-marker"
+      style={{ top: '80px', left: '100px', fontSize: '58px', color: '#d9480f' }}
+    >
+      Different fonts, same animation
+    </H1>
+  </RevealElement>,
+  <RevealElement key="underline" sequenceId={3} x={60} y={150}>
     <Hr style={{ top: '200px', left: '105px', width: '1500px', height: '8px', color: '#2bbe0e' }} />
   </RevealElement>,
-  <RevealElement key="paragraph" sequenceId={3} x={60} y={320}>
+  <RevealElement key="paragraph" sequenceId={4} x={60} y={360}>
     <P style={{ top: '20px', left: '100px', fontSize: '52px', width: '1350px' }}>
       <strong>MCP (Model Context Protocol)</strong> is a{' '}
       <span className="text-red-500">new standard</span>{' '}

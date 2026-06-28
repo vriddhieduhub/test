@@ -1,9 +1,10 @@
 import React from 'react';
 import { useCurrentFrame, Img, staticFile, interpolate } from 'remotion';
 import { headingAnimationConfig } from '../../whiteboard.config'; 
+import { resolveFontStyles } from '../../fonts';
 
 // ক্যানভাস দিয়ে মেমোরিতে একবারই পারফেক্ট পিক্সেল পজিশন ম্যাপ তৈরি
-const calculateAbsolutePositions = (text, fontSize, fontFamily) => {
+const calculateAbsolutePositions = (text, fontSize, fontFamily, fontStyle, fontWeight) => {
   const positions = [0]; 
   const canvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
   
@@ -11,7 +12,7 @@ const calculateAbsolutePositions = (text, fontSize, fontFamily) => {
   
   const context = canvas.getContext('2d');
   if (!context) return positions;
-  context.font = `${fontSize}px ${fontFamily}`;
+  context.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
 
   let currentX = 0;
   for (let i = 0; i < text.length; i++) {
@@ -23,7 +24,7 @@ const calculateAbsolutePositions = (text, fontSize, fontFamily) => {
 };
 
 // ফিক্স: 'text' প্রপ্সের জায়গায় রিঅ্যাক্টের 'children' প্রপ্স নেওয়া হলো যাতে নরমাল HTML এর মতো রিড করা যায়
-export const H1 = ({ children, color, progress, style }) => {
+export const H1 = ({ children, className = '', color, progress, style }) => {
   const frame = useCurrentFrame();
 
   // যদি চাইল্ড হিসেবে কিছু না পাঠানো হয়, তবে সেফটি রিটার্ন
@@ -36,7 +37,7 @@ export const H1 = ({ children, color, progress, style }) => {
 
   // বাইরে থেকে স্টাইলে ফন্ট সাইজ বা ফন্ট ফ্যামিলি পাঠালে সেটা নেবে, নয়তো ডিফল্ট
   const fontSize = style?.fontSize ? parseFloat(style.fontSize) : 95;
-  const fontFamily = style?.fontFamily || "'Kalam', cursive, sans-serif";
+  const {fontFamily, fontStyle, fontWeight} = resolveFontStyles({style, className});
 
   // ১. স্পিড মাল্টিপ্লায়ার অনুযায়ী প্রগ্রেসকে রিম্যাপ করা
   const adjustedProgress = interpolate(
@@ -52,7 +53,13 @@ export const H1 = ({ children, color, progress, style }) => {
   }
 
   const totalChars = text.length;
-  const xPositions = calculateAbsolutePositions(text, fontSize, fontFamily);
+  const xPositions = calculateAbsolutePositions(
+    text,
+    fontSize,
+    fontFamily,
+    fontStyle,
+    fontWeight,
+  );
 
   // ২. আপনার নিখুঁত বেস অফসেট (পেনের নিব কালির লাইনে লক করার জন্য)
   const writeOffsetX = 25;         
@@ -108,6 +115,7 @@ export const H1 = ({ children, color, progress, style }) => {
     <>
       {/* ১. টেক্সট এলিমেন্ট: কোনো এক্সট্রা ডিভ ছাড়া পিউর সলিড <h1> এলিমেন্ট */}
       <h1 
+        className={className}
         style={{ 
           ...style,
           position: 'absolute',
@@ -117,6 +125,8 @@ export const H1 = ({ children, color, progress, style }) => {
           color: color || style?.color || '#ce1414', 
           margin: style?.margin || 0, 
           fontFamily: fontFamily, 
+          fontStyle,
+          fontWeight,
           whiteSpace: 'pre',
           lineHeight: style?.lineHeight || 1.2,
           zIndex: style?.zIndex || 10,
