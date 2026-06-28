@@ -1,4 +1,8 @@
 import React from 'react';
+import { parseClassNameToStyle } from './utils/styleResolver';
+
+
+
 
 // 🎯 শুধুমাত্র হেডার টেক্সটের (Heading) জন্য স্পেসিফিক কনফিগ
 export const headingAnimationConfig = {
@@ -25,6 +29,18 @@ export const paragraphAnimationConfig = {
   microNoise: 1.0,        // ✒️ পেনের ডগার রিয়েলিস্টিক ভাইব্রেশন
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
 const textLength = (node) => {
   if (typeof node === 'string' || typeof node === 'number') {
     return String(node).length;
@@ -43,6 +59,10 @@ const textLength = (node) => {
 // Content এবং config থেকে একটি element-এর natural animation timing বের করে।
 export const getAnimationFrames = (element, fps) => {
   const props = element?.props || {};
+  const parsedStyle = parseClassNameToStyle(props.className || '');
+  const style = { ...parsedStyle, ...props.style };
+
+
   let baseFrames;
   let speedMultiplier = 1;
 
@@ -52,7 +72,7 @@ export const getAnimationFrames = (element, fps) => {
       speedMultiplier = headingAnimationConfig.speedMultiplier;
       break;
     case 'underline': {
-      const width = Number.parseFloat(props.style?.width) || 300;
+      const width = Number.parseFloat(style?.width) || 300;
       baseFrames = Math.max(Math.round(fps * 0.4), Math.ceil(width / 35));
       speedMultiplier = underlineAnimationConfig.speedMultiplier;
       break;
@@ -73,6 +93,10 @@ export const getAnimationFrames = (element, fps) => {
     progressEnd: 100 / speedMultiplier,
   };
 };
+
+
+
+
 
 export const getSequenceDurationInFrames = (children, fps) => {
   const elements = React.Children.toArray(children).filter(React.isValidElement);

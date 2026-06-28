@@ -1,6 +1,8 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useCurrentFrame, Img, staticFile, interpolate } from 'remotion';
 import { paragraphAnimationConfig } from '../../whiteboard.config';
+import { parseClassNameToStyle } from '../../utils/styleResolver';
+
 
 // চাইল্ড নোড বা নেস্টেড স্প্যানগুলোকে ভেঙে তাদের নিজস্ব className ও style অক্ষুণ্ণ রেখে ফ্ল্যাট ক্যারেক্টার ম্যাপ তৈরি করার পিউর পার্সার
 const flattenNodes = (children) => {
@@ -32,10 +34,13 @@ const flattenNodes = (children) => {
   return result;
 };
 
-export const P = ({ children, progress, style, color }) => {
+export const P = ({ children, progress, style: inlineStyle, className = '', color }) => {
   const frame = useCurrentFrame();
   const containerRef = useRef(null);
   const [charPositions, setCharPositions] = useState([]);
+
+  const parsedStyle = parseClassNameToStyle(className);
+  const style = { ...parsedStyle, ...inlineStyle };
 
   const animationConfig = paragraphAnimationConfig;
   const fontSize = style?.fontSize ? parseFloat(style.fontSize) : 48;

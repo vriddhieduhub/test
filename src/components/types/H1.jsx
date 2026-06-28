@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCurrentFrame, Img, staticFile, interpolate } from 'remotion';
 import { headingAnimationConfig } from '../../whiteboard.config'; 
+import { parseClassNameToStyle } from '../../utils/styleResolver';
 import { resolveFontStyles } from '../../fonts';
 
 // ক্যানভাস দিয়ে মেমোরিতে একবারই পারফেক্ট পিক্সেল পজিশন ম্যাপ তৈরি
@@ -24,11 +25,14 @@ const calculateAbsolutePositions = (text, fontSize, fontFamily, fontStyle, fontW
 };
 
 // ফিক্স: 'text' প্রপ্সের জায়গায় রিঅ্যাক্টের 'children' প্রপ্স নেওয়া হলো যাতে নরমাল HTML এর মতো রিড করা যায়
-export const H1 = ({ children, className = '', color, progress, style }) => {
+export const H1 = ({ children, className = '', color, progress, style: inlineStyle }) => {
   const frame = useCurrentFrame();
 
   // যদি চাইল্ড হিসেবে কিছু না পাঠানো হয়, তবে সেফটি রিটার্ন
   const text = typeof children === 'string' ? children : '';
+
+  const parsedStyle = parseClassNameToStyle(className);
+  const style = { ...parsedStyle, ...inlineStyle };
 
   // ==========================================================
   // 🎛️ আপনার কাস্টম হোয়াইটবোর্ড কন্ট্রোল প্যানেল (Config)

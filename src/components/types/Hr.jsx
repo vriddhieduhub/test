@@ -1,10 +1,14 @@
 import React from 'react';
 import { useCurrentFrame, Img, staticFile, interpolate } from 'remotion';
 import { underlineAnimationConfig } from '../../whiteboard.config';
+import { parseClassNameToStyle } from '../../utils/styleResolver';
 
-export const Hr = ({ color, progress, style }) => {
+export const Hr = ({ color, progress, style: inlineStyle, className = '' }) => {
   const frame = useCurrentFrame();
   const animationConfig = underlineAnimationConfig;
+
+  const parsedStyle = parseClassNameToStyle(className);
+  const style = { ...parsedStyle, ...inlineStyle };
 
   // বাইরে থেকে সিএসএস-এ পাঠানো লেআউট প্রপ্স রিড করা হচ্ছে (ডিফল্ট ফুল উইডথ ৩০০ পিক্সেল)
   const externalWidth = style?.width ? parseFloat(style.width) : 300;
@@ -61,6 +65,7 @@ export const Hr = ({ color, progress, style }) => {
     <>
       {/* 🟢 ১. পিউর আলাদা গ্রিন আন্ডারলাইন এলিমেন্ট (কোনো টেক্সটের সাথে যুক্ত নয়) */}
       <div
+        classname = {className}
         style={{
           ...style,
           position: 'absolute',

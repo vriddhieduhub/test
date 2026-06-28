@@ -9,10 +9,10 @@ import { ParagraphBlock } from './components/types/ParagraphBlock';
 import { ListBlock } from './components/types/ListBlock';
 import { CodingBlock } from './components/types/CodingBlock';
 
-export const mainVideoSequence = [
+export const mainVideoSequence_Backup = [
   <RevealElement key="heading" sequenceId={1} x={60} y={60}>
     <H1
-      className="font-caveat"
+      className="font-kalam"
       style={{ top: '80px', left: '100px', fontSize: '100px', color: '#1714ce' }}
     >
       Welcome to MCP Thank you
@@ -44,6 +44,39 @@ export const mainVideoSequence = [
   </RevealElement>,
 ];
 
+export const mainVideoSequence = [
+  <RevealElement key="heading" sequenceId={1}>
+    {/* ইনলাইন স্টাইলের বদলে ক্লাসনেম পাস করা হলো */}
+    <H1 className="font-kalam top-80 left-100 text-8xl text-blue">
+      Welcome to MCP Thank you
+    </H1>
+  </RevealElement>,
+
+  <RevealElement key="second-heading" sequenceId={2}>
+    <H1 className="font-marker top-180 left-100 text-5xl text-orange">
+      Different fonts, same animation
+    </H1>
+  </RevealElement>,
+
+  <RevealElement key="underline" sequenceId={3}>
+    <Hr className="top-250 left-100 w-1200 h-10 text-green" />
+  </RevealElement>,
+
+  <RevealElement key="paragraph" sequenceId={4}>
+    <P className="font-kalam top-350 left-100 text-4xl w-1350 leading-relaxed">
+      <strong>MCP (Model Context Protocol)</strong> is a{' '}
+      <span className="text-red">new standard</span>{' '}
+      that enables AI models to{' '}
+      <span className="bg-yellow rounded px-2">communicate with external tools</span>{' '}
+      in a <u className="underline-green">secure and structured way</u>. It eliminates{' '}
+      <span className="text-blue font-bold">custom integrations</span>, improves{' '}
+      <span className="text-emerald italic">developer productivity</span>, and makes AI agents{' '}
+      <span className="bg-purple rounded px-2"><strong className="font-bold">more reliable</strong></span> for{' '}
+      <span className="underline-thick-red">real-world applications</span>.
+    </P>
+  </RevealElement>,
+];
+
 export const MainVideoEngine = () => {
   return (
     <AbsoluteFill style={{ backgroundColor: 'white', padding: '50px', fontFamily: 'sans-serif' }}>
@@ -53,26 +86,6 @@ export const MainVideoEngine = () => {
         {/* Sequence IDs alone control the order; no duration is needed. */}
         <RevealSequence>
           {mainVideoSequence}
-
-
-
-        {/* <RevealElement sequenceId={4} x={60} y={220}>
-          <ParagraphBlock text="Model Context Protocol connects AI agents to secure data sources seamlessly." />
-        </RevealElement> */}
-
-        {/* সিকোয়েন্স ৩: লিস্ট কন্টেন্ট (টাইমিং: ৫ সেকেন্ড - একটার পর একটা আইটেম আসবে) */}
-        {/* <RevealElement sequenceId={5} x={60} y={400}>
-          <ListBlock items={[
-            "Connects to GitHub Repositories",
-            "Queries SQL Databases directly",
-            "Integrates with Slack Channels"
-          ]} />
-        </RevealElement> */}
-
-        {/* সিকোয়েন্স ৪: কোডিং প্যানেল (টাইমিং: ৬ সেকেন্ড) */}
-        {/* <RevealElement sequenceId={6} x={60} y={550}>
-          <CodingBlock code={`const mcp = require("@modelcontextprotocol/sdk");\nconst server = new mcp.Server();`} />
-        </RevealElement> */}
         </RevealSequence>
 
       </div>
