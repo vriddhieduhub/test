@@ -9,7 +9,7 @@ export const headingAnimationConfig = {
 };
 
 export const underlineAnimationConfig = {
-  speedMultiplier: 1.0,   // 🚀 আন্ডারলাইন ড্র বা রিভিল হওয়ার মেইন স্পিড চাবি
+  speedMultiplier: 0.6,   // 🚀 আন্ডারলাইন ড্র বা রিভিল হওয়ার মেইন স্পিড চাবি
   waveAmplitude: 8,       // 🌊 লাইন টানার সময় হাত কতটা উপর-নিচ কাঁপবে (হেডিংয়ের চেয়ে একটু কম হবে)
   waveFrequency: 1.2,     // ⚡ লাইনের সময় হাত কত ঘনঘন কাঁপবে
   microNoise: 1.2,        // ✒️ পেনের ডগার সূক্ষ্ম রিয়েলিস্টিক ভাইব্রেশন

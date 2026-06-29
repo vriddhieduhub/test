@@ -83,7 +83,7 @@ export const Hr = ({ color, progress, style: inlineStyle, className = '' }) => {
       {/* ২. ডেডিকেটেড হাত এলিমেন্ট: লাইন শেষ হওয়া মাত্রই ক্লিয়ার উধাও হয়ে যাবে */}
       {isWritingActive && (
         <Img
-          src={staticFile("/finaHandImg.svg")}
+          src={staticFile("/finaHandImg.png")}
           alt="Hand with pen"
           style={{
             position: 'absolute',

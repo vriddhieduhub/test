@@ -159,7 +159,7 @@ export const H1 = ({ children, className = '', color, progress, style: inlineSty
 
       {isWritingActive && charPositions.length === totalChars && (
         <Img
-          src={staticFile("/finaHandImg.svg")}
+          src={staticFile("/finaHandImg.png")}
           alt="Hand with pen"
           style={{
             position: 'absolute',
