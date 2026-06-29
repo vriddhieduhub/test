@@ -1,3 +1,5 @@
+/* eslint-disable no-debugger */
+/* eslint-disable no-undef */
 import React from 'react';
 import { parseClassNameToStyle } from './utils/styleResolver';
 
@@ -38,7 +40,11 @@ export const imageAnimationConfig = {
   microNoise: 1.5,        // ✒️ পেনের ডগার সূক্ষ্ম রিয়েলিস্টিক ভাইব্রেশন
 };
 
-
+// 🧼 ERASER AND TIMING CONFIGURATION (নতুন নাম এবং প্রপার স্ট্রাকচার)
+export const eraserAnimationConfig = {
+  eraserDuration: 45,       // স্ক্রিন মুছতে টোটাল ফ্রেম সংখ্যা (১.৫ সেকেন্ড)
+  sceneDelay: 15,          // সিনের এলিমেন্ট শেষ হওয়ার পর ইরেজার কল করার আগের হোল্ড গ্যাপ ফ্রেম
+};
 
 
 
@@ -73,16 +79,19 @@ export const getAnimationFrames = (element, fps) => {
   let speedMultiplier = 1;
 
   switch (element?.type?.animationType) {
+
     case 'heading':
       baseFrames = Math.max(Math.round(fps * 0.6), textLength(element) * 4);
       speedMultiplier = headingAnimationConfig.speedMultiplier;
       break;
+
     case 'underline': {
       const width = Number.parseFloat(style?.width) || 300;
       baseFrames = Math.max(Math.round(fps * 0.4), Math.ceil(width / 35));
       speedMultiplier = underlineAnimationConfig.speedMultiplier;
       break;
     }
+
     case 'paragraph':
       baseFrames = Math.max(
         fps,
@@ -90,10 +99,18 @@ export const getAnimationFrames = (element, fps) => {
       );
       speedMultiplier = paragraphAnimationConfig.speedMultiplier;
       break;
+
     case 'image': 
       baseFrames = Math.round(fps * 3.0);
       speedMultiplier = imageAnimationConfig.speedMultiplier;
       break;
+
+    case 'eraser':
+      // বোর্ডটি উপর থেকে নিচে মুছতে ২.৫ সেকেন্ড বা ৭৫ ফ্রেম বরাদ্দ করা হলো (smooth & elegant)
+      baseFrames = Math.round(fps * 2.5);
+      speedMultiplier = 1.0;
+      break;
+
     default:
       baseFrames = fps;
   }
@@ -108,7 +125,7 @@ export const getAnimationFrames = (element, fps) => {
 
 
 
-export const getSequenceDurationInFrames = (children, fps) => {
+export const getSequenceDurationInFrames_Backup = (children, fps) => {
   const elements = React.Children.toArray(children).filter(React.isValidElement);
   const sequenceIds = [...new Set(elements.map((element) => element.props.sequenceId))];
 
@@ -116,6 +133,28 @@ export const getSequenceDurationInFrames = (children, fps) => {
     const sequenceFrames = elements
       .filter((element) => element.props.sequenceId === sequenceId)
       .map((element) => getAnimationFrames(element.props.children, fps).animationFrames);
+
+    return totalFrames + Math.max(...sequenceFrames);
+  }, 0);
+};
+
+
+export const getSequenceDurationInFrames = (children, fps) => {
+  // রিঅ্যাক্ট চাইল্ড নোড ফিল্টারিং
+  const elements = React.Children.toArray(children).filter(React.isValidElement);
+  const sequenceIds = [...new Set(elements.map((element) => element.props.sequenceId))];
+
+  return sequenceIds.reduce((totalFrames, sequenceId) => {
+    const sequenceFrames = elements
+      .filter((element) => element.props.sequenceId === sequenceId)
+      .map((element) => {
+        // 🎯 ম্যাজিক সেফটি ফিক্স: 
+        // যদি element নিজেই সরাসরি H1/Image/Hr হয় তবে সেটাই পাঠাবে, 
+        // আর যদি RevealElement দিয়ে মোড়ানো থাকে, তবে তার পেটের children-কে পাঠাবে।
+        const innerTarget = element.props.sequenceId && element.props.children ? element.props.children : element;
+        
+        return getAnimationFrames(innerTarget, fps).animationFrames;
+      });
 
     return totalFrames + Math.max(...sequenceFrames);
   }, 0);
