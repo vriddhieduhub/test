@@ -1,6 +1,7 @@
 import React from 'react';
 import { Composition } from 'remotion';
-import { MainVideoEngine, scene01Sequence, scene02Sequence, scene03Sequence, scene04Sequence } from './MainVideoEngine';
+import { MainVideoEngine, scene01Sequence, scene02Sequence, scene03Sequence,
+   scene04Sequence, mcpBasicFlowSequence } from './MainVideoEngine';
 import { getSequenceDurationInFrames } from './whiteboard.config';
 
 const FPS = 30;
@@ -12,13 +13,16 @@ export const RemotionRoot = () => {
   const scene02Duration = getSequenceDurationInFrames(scene02Sequence, FPS);
   const scene03Duration = getSequenceDurationInFrames(scene03Sequence, FPS);
   const scene04Duration = getSequenceDurationInFrames(scene04Sequence, FPS);
-  
+  const scene05Duration = getSequenceDurationInFrames(mcpBasicFlowSequence, FPS);
+
+
   // মোট ডিউরেশন = Scene01 + Scene02 + Scene03 + End Hold
   const totalDuration = 
     scene01Duration + 
     scene02Duration + 
     scene03Duration + 
     scene04Duration +
+    scene05Duration +
     END_HOLD_IN_FRAMES;
 
   return (

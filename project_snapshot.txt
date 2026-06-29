@@ -4,9 +4,7 @@ PROJECT STRUCTURE
 
 src/
 ├── components/
-│   ├── HandPen.jsx
 │   ├── RevealElement.jsx
-│   ├── SceneTransition.jsx
 │   └── types/
 │       ├── CodingBlock.jsx
 │       ├── H1.jsx
@@ -15,6 +13,7 @@ src/
 │       ├── ListBlock.jsx
 │       ├── P.jsx
 │       ├── ParagraphBlock.jsx
+│       ├── Table.jsx
 │       └── WhiteboardEraser.jsx
 ├── Composition.jsx
 ├── fonts.js
@@ -31,65 +30,6 @@ src/
 ===========================================
 FILE CONTENTS
 ===========================================
-
-###########################################
-src\components\HandPen.jsx
-###########################################
-import React from 'react';
-import { useCurrentFrame, interpolate, Img, staticFile } from 'remotion';
-
-export const HandPen = () => {
-  const frame = useCurrentFrame();
-  const fps = 30;
-
-  // আপনার দেওয়া কোডের অফসেট লজিক অনুযায়ী পজিশন লক করা
-  const startX = 50 + (-25); // text1Pos.left + writeOffsetX
-  const startY = 40 + 35;    // text1Pos.top + writeOffsetY
-  
-  // ক্যারেক্টার প্রতি আনুমানিক উইডথ অনুযায়ী শেষ পজিশন
-  const totalChars = "Welcome to MCP Tutorial".length;
-  const estimatedTextWidth = totalChars * 32; 
-  const endX = startX + estimatedTextWidth;
-
-  // ০ থেকে ৯০ ফ্রেম (৩ সেকেন্ড) পর্যন্ত হাতটি বাম থেকে ডানে মুভ করবে
-  const currentX = interpolate(frame, [0, 90], [startX, endX], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
-
-  // ৯০ ফ্রেম (৩ সেকেন্ড) লেখা শেষ হলে হাতটি অপাসিটি ০ হয়ে হাইড হয়ে যাবে
-  const opacity = interpolate(frame, [90, 95], [1, 0], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
-
-  // লেখার সময় হাতের স্বাভাবিক কাঁপাকাঁপি (Human Wave Effect)
-  let humanWaveY = 0;
-  let humanWaveX = 0;
-  if (frame <= 90) {
-    humanWaveY = Math.sin(frame * 0.4) * 5 + (Math.random() - 0.5) * 2;
-    humanWaveX = Math.cos(frame * 0.3) * 2;
-  }
-
-  return (
-    <>
-      <Img
-        src={staticFile("/finaHandImg.svg")}
-        alt="Hand with pen"
-        style={{
-          position: 'absolute',
-          left: `${currentX + humanWaveX}px`,
-          top: `${startY + humanWaveY}px`,
-          width: '180px',
-          zIndex: 999,
-          pointerEvents: 'none',
-          opacity: opacity,
-          display: frame > 95 ? 'none' : 'block',
-        }}
-      />
-    </>
-  );
-};
 
 ###########################################
 src\components\RevealElement.jsx
@@ -110,10 +50,15 @@ export const RevealSequence = ({children}) => {
 
   for (const sequenceId of sequenceIds) {
     const group = elements.filter((element) => element.props.sequenceId === sequenceId);
+    
+    // 🎯 মেইন ফিক্স ১: গ্রুপ ফ্রেম ক্যালকুলেট করার সময় আসল ভেতরের চাইল্ড নোডটি পাঠানো হচ্ছে
     const groupFrames = Math.max(
-      ...group.map(
-        (element) => getAnimationFrames(element.props.children, fps).animationFrames,
-      ),
+      ...group.map((element) => {
+        const coreChild = element.props.children;
+        return React.isValidElement(coreChild)
+          ? getAnimationFrames(coreChild, fps).animationFrames
+          : getAnimationFrames(element, fps).animationFrames;
+      }),
     );
 
     timeline.set(sequenceId, {startFrame: nextStartFrame});
@@ -121,8 +66,15 @@ export const RevealSequence = ({children}) => {
   }
 
   return elements.map((element) => {
-    const ownTiming = getAnimationFrames(element.props.children, fps);
     const sequenceTiming = timeline.get(element.props.sequenceId);
+    
+    // 🎯 মেইন ফিক্স ২: ক্লোনিং এবং ওন টাইমিংয়ের সময়ও আসল ভেতরের চাইল্ডের ফ্রেম পাস করা হচ্ছে
+    const coreChild = element.props.children;
+    const ownTiming = React.isValidElement(coreChild)
+      ? getAnimationFrames(coreChild, fps)
+      : getAnimationFrames(element, fps);
+
+    // RevealElement তার নিজের progress ক্যালকুলেশনের জন্য animationFrames এবং progressEnd পাবে
     return React.cloneElement(element, {...sequenceTiming, ...ownTiming});
   });
 };
@@ -137,10 +89,7 @@ export const RevealElement = ({
 }) => {
   const frame = useCurrentFrame();
 
-  if (frame < startFrame) {
-    return null;
-  }
-
+  // প্রগ্রেস ক্যালকুলেশন - নিজস্ব স্টার্ট ফ্রেমের সাপেক্ষে (এখন animationFrames একদম নিখুঁত ভ্যালু পাবে)
   const progress = interpolate(
     frame,
     [startFrame, startFrame + animationFrames],
@@ -148,18 +97,16 @@ export const RevealElement = ({
     {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'},
   );
 
+  // এলিমেন্টটি মাউন্ট থাকা দরকার যাতে রিফ কাজ করে, কিন্তু স্টার্ট ফ্রেমের আগে হাইড থাকবে
+  const isStarted = frame >= startFrame;
+
   return (
-    <div style={{position: 'absolute', top: y, left: x}}>
-      {React.cloneElement(children, {progress})}
+    <div style={{position: 'absolute', top: y, left: x, visibility: isStarted ? 'visible' : 'hidden'}}>
+      {/* 🎯 মেইন ফিক্স ৩: চাইল্ড কম্পোনেন্টের কাছে প্রগ্রেসের সাথে সাথে তার বরাদ্দকৃত আসল ফ্রেমও পাস করে দেওয়া হলো */}
+      {React.cloneElement(children, { progress, animationFrames })}
     </div>
   );
 };
-
-
-###########################################
-src\components\SceneTransition.jsx
-###########################################
-
 
 ###########################################
 src\components\types\CodingBlock.jsx
@@ -181,127 +128,129 @@ export const CodingBlock = ({ code, progress }) => {
 ###########################################
 src\components\types\H1.jsx
 ###########################################
-import React from 'react';
+import React, { useMemo, useRef, useState, useEffect, useLayoutEffect } from 'react';
 import { useCurrentFrame, Img, staticFile, interpolate } from 'remotion';
 import { headingAnimationConfig } from '../../whiteboard.config'; 
 import { parseClassNameToStyle } from '../../utils/styleResolver';
 import { resolveFontStyles } from '../../fonts';
 
-// ক্যানভাস দিয়ে মেমোরিতে একবারই পারফেক্ট পিক্সেল পজিশন ম্যাপ তৈরি
-const calculateAbsolutePositions = (text, fontSize, fontFamily, fontStyle, fontWeight) => {
-  const positions = [0]; 
-  const canvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
-  
-  if (!canvas) return positions;
-  
-  const context = canvas.getContext('2d');
-  if (!context) return positions;
-  context.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
-
-  let currentX = 0;
-  for (let i = 0; i < text.length; i++) {
-    const charWidth = Math.round(context.measureText(text[i]).width);
-    currentX += charWidth;
-    positions.push(currentX); 
-  }
-  return positions;
+// ক্যারেক্টার ম্যাপ তৈরি করার পার্সার
+const flattenNodes = (children) => {
+  const result = [];
+  const traverse = (node, inheritedProps = { style: {}, className: '' }) => {
+    if (typeof node === 'string' || typeof node === 'number') {
+      const str = String(node);
+      for (let char of str) {
+        result.push({ 
+          char, 
+          style: inheritedProps.style, 
+          className: inheritedProps.className,
+          type: inheritedProps.type 
+        });
+      }
+    } else if (React.isValidElement(node)) {
+      const nodeProps = node.props || {};
+      let combinedStyle = { ...inheritedProps.style, ...nodeProps.style };
+      let combinedClassName = [inheritedProps.className, nodeProps.className].filter(Boolean).join(' ');
+      React.Children.forEach(nodeProps.children, (child) => 
+        traverse(child, { style: combinedStyle, className: combinedClassName, type: node.type })
+      );
+    }
+  };
+  React.Children.forEach(children, (child) => traverse(child));
+  return result;
 };
 
-// ফিক্স: 'text' প্রপ্সের জায়গায় রিঅ্যাক্টের 'children' প্রপ্স নেওয়া হলো যাতে নরমাল HTML এর মতো রিড করা যায়
 export const H1 = ({ children, className = '', color, progress, style: inlineStyle }) => {
   const frame = useCurrentFrame();
+  const containerRef = useRef(null);
+  const [charPositions, setCharPositions] = useState([]);
 
-  // যদি চাইল্ড হিসেবে কিছু না পাঠানো হয়, তবে সেফটি রিটার্ন
-  const text = typeof children === 'string' ? children : '';
-
-  const parsedStyle = parseClassNameToStyle(className);
-  const style = { ...parsedStyle, ...inlineStyle };
-
-  // ==========================================================
-  // 🎛️ আপনার কাস্টম হোয়াইটবোর্ড কন্ট্রোল প্যানেল (Config)
-  // ==========================================================
+  const parsedStyle = useMemo(() => parseClassNameToStyle(className), [className]);
+  const style = useMemo(() => ({ ...parsedStyle, ...inlineStyle }), [parsedStyle, inlineStyle]);
   const animationConfig = headingAnimationConfig;
 
-  // বাইরে থেকে স্টাইলে ফন্ট সাইজ বা ফন্ট ফ্যামিলি পাঠালে সেটা নেবে, নয়তো ডিফল্ট
   const fontSize = style?.fontSize ? parseFloat(style.fontSize) : 95;
   const {fontFamily, fontStyle, fontWeight} = resolveFontStyles({style, className});
 
-  // ১. স্পিড মাল্টিপ্লায়ার অনুযায়ী প্রগ্রেসকে রিম্যাপ করা
+  const flatChars = useMemo(() => flattenNodes(children), [children]);
+  const totalChars = flatChars.length;
+
+  // DOM পজিশন ট্র্যাকিং - useLayoutEffect ব্যবহার করা হলো যাতে রেন্ডারিং এর আগেই ক্যালকুলেশন হয়
+  useLayoutEffect(() => {
+    if (!containerRef.current) return;
+    const spans = containerRef.current.querySelectorAll('.live-char');
+    const positions = [];
+    
+    spans.forEach((span) => {
+      positions.push({
+        x: span.offsetLeft + span.offsetWidth, 
+        y: span.offsetTop, 
+        width: span.offsetWidth,
+        height: span.offsetHeight
+      });
+    });
+    
+    if (positions.length > 0) {
+      setCharPositions(positions);
+    }
+  }, [flatChars, totalChars, frame]); // frame dependency ensures it updates during animation
+
+  // প্রগ্রেস হ্যান্ডলিং
   const adjustedProgress = interpolate(
-    progress * animationConfig.speedMultiplier, 
-    [0, 100], 
-    [0, 100], 
+    progress,
+    [0, 100],
+    [0, 100],
     { extrapolateRight: 'clamp' }
   );
 
-  // টাইমলাইনের একদম শুরুতে আস্ত টেক্সট ও হাত গায়েব থাকবে
-  if (adjustedProgress === 0) {
-    return null;
+  const globalCharProgress = (adjustedProgress / 100) * totalChars;
+  const currentCharIndex = Math.min(Math.floor(globalCharProgress), totalChars - 1);
+  const charRemainder = globalCharProgress - currentCharIndex;
+  const charsToShow = Math.floor(globalCharProgress);
+
+  let handBaseX = 0;
+  let handBaseY = 0;
+
+  if (charPositions.length === totalChars && totalChars > 0) {
+    const c1 = charPositions[currentCharIndex];
+    const c2 = charPositions[Math.min(currentCharIndex + 1, totalChars - 1)];
+
+    if (c2 && c1 && c2.y > c1.y) {
+      handBaseX = charRemainder < 0.1 ? c1.x : c2.x - c2.width;
+      handBaseY = charRemainder < 0.1 ? c1.y : c2.y;
+    } else if (c1) {
+      handBaseX = c1.x + ((c2 ? c2.x : c1.x) - c1.x) * charRemainder;
+      handBaseY = c1.y;
+    }
   }
 
-  const totalChars = text.length;
-  const xPositions = calculateAbsolutePositions(
-    text,
-    fontSize,
-    fontFamily,
-    fontStyle,
-    fontWeight,
-  );
+  const writeOffsetX = -55;
+  const writeOffsetY = fontSize * 0.5; 
 
-  // ২. আপনার নিখুঁত বেস অফসেট (পেনের নিব কালির লাইনে লক করার জন্য)
-  const writeOffsetX = -10;         
-  const writeOffsetY = 45;          
-
-  // 🎯 হাত এবং মাস্কিংয়ের জন্য লিনিয়ার পিক্সেল প্রগ্রেস ক্যালকুলেশন
-  const totalTextWidth = xPositions[totalChars] || 0;
-  
-  const globalCharProgress = (adjustedProgress / 100) * totalChars;
-  const currentCharIndex = Math.floor(globalCharProgress);
-  const charRemainder = globalCharProgress - currentCharIndex;
-
-  const p1 = xPositions[Math.min(currentCharIndex, totalChars)] || 0;
-  const p2 = xPositions[Math.min(currentCharIndex + 1, totalChars)] || 0;
-  const currentPixelX = p1 + (p2 - p1) * charRemainder;
-
-  const handBaseX = Math.round(currentPixelX);
-
-  // বাইরে থেকে সিএসএস-এ পাঠানো left এবং top পিক্সেল ভ্যালু এক্সট্র্যাক্ট করা
   const externalLeft = style?.left ? parseFloat(style.left) : 0;
   const externalTop = style?.top ? parseFloat(style.top) : 0;
 
-  // হাত এখন বাইরে থেকে পাঠানো পজিশনের সাপেক্ষে তার আসল কো-অর্ডিনেট খুঁজে পাবে
   const handX = handBaseX + writeOffsetX + externalLeft;
-
-  // ==========================================================
-  // 🎯 AM/FM কম্পাউন্ড সাইন-ওয়েভ ও রিয়েল র‍্যান্ডমনেস ক্যালকুলেশন
-  // ==========================================================
   const isWritingActive = adjustedProgress > 0 && adjustedProgress < 100;
-  
+
   const wave1 = Math.sin(frame * animationConfig.waveFrequency);
-  const wave2 = Math.sin(frame * (animationConfig.waveFrequency * 0.47));
-  const wave3 = Math.cos(frame * (animationConfig.waveFrequency * 1.63));
-  
+  const wave2 = Math.cos(frame * (animationConfig.waveFrequency * 0.55));
   const compoundWaveY = isWritingActive 
-    ? (wave1 * 0.55 + wave2 * 0.35 + wave3 * 0.1) * animationConfig.waveAmplitude
-    : 0;
-  
-  const humanNoiseX = isWritingActive 
-    ? (Math.sin(frame * 1.35) * 2) + (Math.cos(frame * 2.67) * 1.5) + ((Math.random() - 0.5) * animationConfig.microNoise)
+    ? (wave1 * 0.6 + wave2 * 0.4) * animationConfig.waveAmplitude 
     : 0;
 
-  const humanNoiseY = isWritingActive 
-    ? ((Math.random() - 0.5) * animationConfig.microNoise)
-    : 0;
+  const humanNoiseX = isWritingActive ? ((Math.random() - 0.5) * animationConfig.microNoise) : 0;
+  const humanNoiseY = isWritingActive ? ((Math.random() - 0.5) * animationConfig.microNoise) : 0;
 
-  const handY = writeOffsetY + compoundWaveY + humanNoiseY + externalTop;
+  const handY = handBaseY + writeOffsetY + compoundWaveY + humanNoiseY + externalTop;
 
-  // ಫಿಕ್ಸ್: শেষ অক্ষরের হেলানো কার্ভ যাতে না কাটে, তাই ১০০% রিভিল সেফটি ইনসেট
-  const maskRightInset = adjustedProgress >= 100 ? 0 : Math.max(0, totalTextWidth - handBaseX);
+  if (adjustedProgress <= 0) return null;
 
   return (
     <>
-      {/* ১. টেক্সট এলিমেন্ট: কোনো এক্সট্রা ডিভ ছাড়া পিউর সলিড <h1> এলিমেন্ট */}
       <h1 
+        ref={containerRef}
         className={className}
         style={{ 
           ...style,
@@ -317,17 +266,30 @@ export const H1 = ({ children, className = '', color, progress, style: inlineSty
           whiteSpace: 'pre',
           lineHeight: style?.lineHeight || 1.2,
           zIndex: style?.zIndex || 10,
-          clipPath: `inset(0px ${maskRightInset}px 0px 0px)`,
           width: style?.width === '100%' ? 'auto' : style?.width,
         }}
       >
-        {text}
+        {flatChars.map((item, idx) => {
+          const isVisible = idx < charsToShow;
+          return (
+            <span
+              key={idx}
+              className="live-char"
+              style={{
+                ...item.style,
+                display: 'inline',
+                opacity: isVisible ? 1 : 0, 
+              }}
+            >
+              {item.char}
+            </span>
+          );
+        })}
       </h1>
 
-      {/* ২. হাত এলিমেন্ট: হেডিং লেখা শেষ হওয়ামাত্রই একদম ক্লিনভাবে স্ক্রিন থেকে ভ্যানিশ হয়ে যাবে */}
-      {isWritingActive && (
+      {isWritingActive && charPositions.length === totalChars && (
         <Img
-          src={staticFile("/finaHandImg.svg")}
+          src={staticFile("/finaHandImg.png")}
           alt="Hand with pen"
           style={{
             position: 'absolute',
@@ -434,7 +396,7 @@ export const Hr = ({ color, progress, style: inlineStyle, className = '' }) => {
       {/* ২. ডেডিকেটেড হাত এলিমেন্ট: লাইন শেষ হওয়া মাত্রই ক্লিয়ার উধাও হয়ে যাবে */}
       {isWritingActive && (
         <Img
-          src={staticFile("/finaHandImg.svg")}
+          src={staticFile("/finaHandImg.png")}
           alt="Hand with pen"
           style={{
             position: 'absolute',
@@ -531,7 +493,7 @@ export const Image = ({ src, alt = "Whiteboard Image", progress, className = '',
 
       {isWritingActive && (
         <Img
-          src={staticFile("/finaHandImg.svg")}
+          src={staticFile("/finalHandImgArt.png")}
           alt="Hand drawing image"
           style={{
             position: 'absolute',
@@ -742,7 +704,7 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
       {/* ২. হাত এলিমেন্ট */}
       {isWritingActive && charPositions.length === totalChars && (
         <Img
-          src={staticFile("/finaHandImg.svg")}
+          src={staticFile("/finaHandImg.png")}
           alt="Hand with pen"
           style={{
             position: 'absolute',
@@ -795,6 +757,314 @@ export const ParagraphBlock = ({ text, progress }) => {
     </p>
   );
 };
+
+###########################################
+src\components\types\Table.jsx
+###########################################
+import React, { createContext, useContext, useMemo, useRef, useState, useLayoutEffect } from 'react';
+import { useCurrentFrame, Img, staticFile, interpolate } from 'remotion';
+import { tableAnimationConfig } from '../../whiteboard.config';
+import { parseClassNameToStyle } from '../../utils/styleResolver';
+
+const TableSequenceContext = createContext(null);
+
+const flattenCellNodes = (children) => {
+  const result = [];
+  const traverse = (node) => {
+    if (!node) return;
+    if (typeof node === 'string' || typeof node === 'number') {
+      const str = String(node);
+      for (let char of str) {
+        result.push({ type: 'char', value: char });
+      }
+    } else if (React.isValidElement(node)) {
+      if (node.type === 'img' || node.type === Img) {
+        result.push({ type: 'image', props: node.props });
+      } else {
+        React.Children.forEach(node.props.children, traverse);
+      }
+    }
+  };
+  React.Children.forEach(children, traverse);
+  return result;
+};
+
+// ১. মূল টেবিল র্যাপার কম্পোনেন্ট
+export const Table = ({ children, progress, className = '', style: inlineStyle }) => {
+  const parsedStyle = parseClassNameToStyle(className);
+  const style = { ...parsedStyle, ...inlineStyle };
+  const tableWidth = style?.width ? parseFloat(style.width) : 1700;
+
+  const cellElements = useMemo(() => {
+    const flatCells = [];
+    const collectCells = (node) => {
+      if (!node) return;
+      if (React.isValidElement(node)) {
+        if (node.type === 'td' || node.type === 'th' || node.type === Td || node.type === Th) {
+          flatCells.push(node);
+        } else {
+          React.Children.forEach(node.props.children, collectCells);
+        }
+      } else if (Array.isArray(node)) {
+        node.forEach(collectCells);
+      }
+    };
+    collectCells(children);
+    return flatCells;
+  }, [children]);
+
+  const totalCells = cellElements.length || 1;
+
+  // টেবিল কাঠামো হুট করে পড়া বন্ধ করতে clip-path লজিক (প্রথম ১০% প্রগ্রেসে খালি টেবিল ড্র হবে)
+  let clipPathString = `polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)`;
+  if (progress < 10) {
+    const p = (progress / 10) * 100;
+    if (p <= 50) {
+      clipPathString = `polygon(0% 0%, ${p * 2}% 0%, 0% ${p * 2}%)`;
+    } else {
+      clipPathString = `polygon(0% 0%, 100% 0%, 100% ${(p - 50) * 2}%, ${(p - 50) * 2}% 100%, 0% 100%)`;
+    }
+  }
+
+  return (
+    <TableSequenceContext.Provider value={{ globalProgress: progress, totalCells, tableWidth }}>
+      <div
+        className={className}
+        style={{
+          ...style,
+          position: 'absolute',
+          top: style?.top || '0px',
+          left: style?.left || '0px',
+          width: `${tableWidth}px`,
+          zIndex: style?.zIndex || 10,
+          clipPath: clipPathString,
+          willChange: 'clip-path',
+        }}
+      >
+        <table style={{ width: '100%', borderCollapse: 'collapse', border: '3px solid #000', tableLayout: 'fixed' }}>
+          {children}
+        </table>
+      </div>
+    </TableSequenceContext.Provider>
+  );
+};
+
+// ২. কাস্টম Td কম্পোনেন্ট (NO FLEX, অরিজিনাল P.jsx ট্র্যাকিং আর্কিটেকচার)
+export const Td = ({ children, cellIndex, className = '', style: cellInlineStyle, ...props }) => {
+  const frame = useCurrentFrame();
+  const containerRef = useRef(null); 
+  const context = useContext(TableSequenceContext);
+  const [charPositions, setCharPositions] = useState([]);
+
+  const parsedClasses = parseClassNameToStyle(className);
+  const combinedStyle = { ...parsedClasses, ...cellInlineStyle };
+
+  if (!context) return <td style={combinedStyle} {...props}>{children}</td>;
+
+  const { globalProgress, totalCells, tableWidth } = context;
+
+  // ১০% টেবিল ছক আঁকার পর বাকি ৯০% প্রগ্রেস সমানভাবে সেলগুলোর মধ্যে বন্টন হবে
+  const cellStartPercent = 10 + (cellIndex / totalCells) * 90;
+  const cellEndPercent = 10 + ((cellIndex + 1) / totalCells) * 90;
+
+  const localProgress = interpolate(
+    globalProgress,
+    [cellStartPercent, cellEndPercent],
+    [0, 100],
+    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
+  );
+
+  const isCellStarted = globalProgress >= cellStartPercent;
+  const isCellWriting = globalProgress > cellStartPercent && globalProgress < cellEndPercent;
+
+  const flatNodes = useMemo(() => flattenCellNodes(children), [children]);
+  const totalSteps = flatNodes.length || 1;
+
+  const globalCharProgress = (localProgress / 100) * totalSteps;
+  const currentCharIndex = Math.min(Math.floor(globalCharProgress), totalSteps - 1);
+  const charRemainder = globalCharProgress - currentCharIndex;
+  const charsToShow = Math.floor(globalCharProgress);
+
+  // 🎯 আপনার ইঞ্জিনের মেইন ক্লাস '.live-char' ধরে পিউর DOM অফসেট ট্র্যাকিং
+  useLayoutEffect(() => {
+    if (!containerRef.current || !isCellStarted) return;
+    const spans = containerRef.current.querySelectorAll('.live-char');
+    const positions = [];
+    
+    spans.forEach((span) => {
+      positions.push({
+        x: span.offsetLeft + span.offsetWidth, 
+        y: span.offsetTop, 
+        width: span.offsetWidth,
+        height: span.offsetHeight
+      });
+    });
+    
+    // কেবল পজিশন কাউন্ট চেঞ্জ হলেই স্টেট আপডেট হবে, যা ডেডলক লুপ চিরতরে বন্ধ করবে
+    if (positions.length > 0 && positions.length !== charPositions.length) {
+      setCharPositions(positions);
+    }
+  }, [flatNodes, totalSteps, frame, charsToShow, isCellStarted, charPositions.length]); 
+
+  // আপনার ইঞ্জিনের কোর রাইটিং পজিশন গাইডলাইন
+  let handBaseX = 0;
+  let handBaseY = 0;
+
+  if (charPositions.length > 0) {
+    const activeIdx = Math.min(currentCharIndex, charPositions.length - 1);
+    const c1 = charPositions[activeIdx];
+    const c2 = charPositions[Math.min(activeIdx + 1, charPositions.length - 1)];
+
+    if (c2 && c1 && c2.y > c1.y) {
+      handBaseX = charRemainder < 0.1 ? c1.x : c2.x - c2.width;
+      handBaseY = charRemainder < 0.1 ? c1.y : c2.y;
+    } else if (c1) {
+      handBaseX = c1.x + ((c2 ? c2.x : c1.x) - c1.x) * charRemainder;
+      handBaseY = c1.y;
+    }
+  } else {
+    // 🎯 সেফটি ব্যাকআপ লক: ডম পজিশন লোড হতে দেরি হলেও হাত যাতে লিনিয়ারলি এগিয়ে লেখা শুরু করে দেয়
+    const colIndex = cellIndex % 3;
+    const fixedWidthPercent = colIndex === 0 ? 25 : 37.5;
+    const fixedWidthPx = (fixedWidthPercent / 100) * tableWidth;
+    handBaseX = (localProgress / 100) * (fixedWidthPx - 60);
+    handBaseY = localProgress > 60 ? 95 : 35; 
+  }
+
+  // পেনের নিবের পারফেক্ট ইউনিভার্সাল অফসেট
+  const writeOffsetX = -45;
+  const writeOffsetY = 24;
+
+  const handX = handBaseX + writeOffsetX;
+  const handY = handBaseY + writeOffsetY;
+
+  const colIndex = cellIndex % 3;
+  const fixedWidthPercent = colIndex === 0 ? 25 : 37.5;
+
+  return (
+    <td 
+      style={{ 
+        position: 'relative', 
+        padding: '30px 20px', 
+        width: `${fixedWidthPercent}%`,
+        height: '180px', 
+        minHeight: '180px',
+        verticalAlign: 'top', 
+        overflow: 'hidden',
+        fontSize: '45px', 
+        lineHeight: '1.4',
+        visibility: isCellStarted ? 'visible' : 'hidden', // 🚀 কন্টেন্ট ডেডলক এড়াতে নেটিভ CSS কন্ট্রোল
+        ...combinedStyle
+      }} 
+      {...props}
+    >
+      {/* 🚀 কোনো FLEX নেই। পিউর ব্লক ফ্লো যা টেক্সটকে ২ লাইনে সুন্দরভাবে র‍্যাপ করবে */}
+      <div 
+        ref={containerRef} 
+        style={{ 
+          display: 'block', 
+          width: '100%',
+          wordBreak: 'keep-all',   
+          wordWrap: 'break-word',  
+        }}
+      >
+        {flatNodes.map((node, idx) => {
+          const isVisible = idx < charsToShow;
+
+          if (node.type === 'image') {
+            const imagePath = node.props.src.startsWith('/') ? node.props.src : `/${node.props.src}`;
+            const userWidth = node.props.width || '60px';
+            return (
+              <span 
+                key={`img-${idx}`} 
+                className="live-char"
+                style={{ display: 'inline-block', width: userWidth, height: 'auto', marginRight: '12px', verticalAlign: 'middle', opacity: isVisible ? 1 : 0 }}
+              >
+                <Img src={staticFile(imagePath)} style={{ width: '100%', height: 'auto', objectFit: 'contain' }} alt="" />
+              </span>
+            );
+          }
+
+          return (
+            <span 
+              key={`char-${idx}`} 
+              className="live-char"
+              style={{ 
+                display: 'inline', 
+                whiteSpace: 'pre-wrap', 
+                fontFamily: "'Kalam', cursive", 
+                opacity: isVisible ? 1 : 0 
+              }}
+            >
+              {node.value}
+            </span>
+          );
+        })}
+      </div>
+
+      {/* ✒️ পিউর সিঙ্কড রাইটিং হ্যান্ড */}
+      {isCellWriting && (
+        <Img
+          src={staticFile("/finaHandImg.png")}
+          alt="Hand writing cell"
+          style={{
+            position: 'absolute',
+            left: `${handX}px`,
+            top: `${handY}px`,
+            width: '180px', 
+            zIndex: 100,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+    </td>
+  );
+};
+
+// ৩. কাস্টম Th (Table Header Cell) কম্পোনেন্ট
+export const Th = ({ children, cellIndex, className = '', style: cellInlineStyle, ...props }) => {
+  const colIndex = cellIndex % 3;
+  const fixedWidthPercent = colIndex === 0 ? 25 : 37.5;
+  
+  const parsedClasses = parseClassNameToStyle(className);
+  const combinedStyle = { ...parsedClasses, ...cellInlineStyle };
+
+  return (
+    <th 
+      style={{ 
+        backgroundColor: '#f3f4f6', 
+        fontWeight: 'bold', 
+        borderBottom: '3px solid #000',
+        padding: '25px 20px',
+        width: `${fixedWidthPercent}%`,
+        height: '110px',
+        minHeight: '110px',
+        textAlign: 'left',
+        verticalAlign: 'middle',
+        fontSize: '45px',
+        ...combinedStyle 
+      }} 
+      {...props}
+    >
+      {children}
+    </th>
+  );
+};
+
+// ৪. কাস্টম Tr (Table Row) কম্পোনেন্ট
+export const Tr = ({ children, className = '', style, ...props }) => {
+  const parsedClasses = parseClassNameToStyle(className);
+  const combinedStyle = { ...parsedClasses, ...style };
+
+  return (
+    <tr style={{ borderBottom: '2px solid #000', height: '180px', ...combinedStyle }} {...props}>
+      {children}
+    </tr>
+  );
+};
+
+Table.animationType = 'table';
+Table.getTargetElement = (props) => props.children;
 
 ###########################################
 src\components\types\WhiteboardEraser.jsx
@@ -1042,7 +1312,8 @@ import { getSequenceDurationInFrames } from './whiteboard.config';
 import { H1 } from './components/types/H1';
 import { Hr } from './components/types/Hr';
 import { P } from './components/types/P';
-import {Image} from './components/types/Image';
+import { Image } from './components/types/Image';
+import { Table, Tr, Th, Td } from './components/types/Table'; // নতুন তৈরি করা টেবিল কম্পোনেন্ট
 
 // ==========================================
 // SCENE 01: মূল সিন - হেডিং, প্যারাগ্রাফ, ইমেজ ইত্যাদি
@@ -1073,7 +1344,7 @@ export const scene01Sequence = [
   </RevealElement>,
 
   <RevealElement key="paragraph" sequenceId={5}>
-    <P className="font-kalam top-350 left-100 text-4xl w-1600 leading-relaxed">
+    <P className="font-kalam top-350 left-700 text-4xl w-1100 leading-relaxed">
       <strong>MCP (Model Context Protocol)</strong> is a{' '}
       <span className="text-red">new standard</span>{' '}
       that enables AI models to{' '}
@@ -1110,12 +1381,65 @@ export const scene02Sequence = [
   </RevealElement>,
 
   <RevealElement key="scene2-description" sequenceId={3}>
-    <P className="font-kalam top-700 left-100 text-3xl w-1350 leading-relaxed text-gray-700">
+    <P className="font-kalam top-700 left-700 text-3xl w-1100 leading-relaxed text-gray-700">
       Explore the powerful capabilities and integrations available in the MCP ecosystem.
     </P>
   </RevealElement>,
 
   <RevealElement key="eraser-scene02" sequenceId={4}>
+    <WhiteboardEraser />
+  </RevealElement>,
+];
+
+// ==========================================
+// SCENE 04: নতুন টেবিল কম্পারিসন সিন (MCP vs LangGraph)
+// ==========================================
+export const scene04Sequence = [
+  <RevealElement key="scene4-heading" sequenceId={1}>
+    <H1 className="font-kalam top-80 left-100 text-6xl text-black font-bold w-full">
+      Comparison: MCP vs LangGraph
+    </H1>
+  </RevealElement>,
+
+<RevealElement key="comparison-table" sequenceId={2}>
+    <Table className="top-220 left-100 w-1700 font-kalam">
+      <thead>
+        <Tr className="bg-gray-100 border-bottom-3">
+          <Th cellIndex={0} className="text-left text-5xl border-right-2">Aspect</Th>
+          <Th cellIndex={1} className="text-left text-5xl text-blue border-right-2">MCP</Th>
+          <Th cellIndex={2} className="text-left text-5xl text-green">LangGraph</Th>
+        </Tr>
+      </thead>
+      <tbody>
+        {/* ROW 1: Role */}
+        <Tr className="border-bottom-2">
+          <Td cellIndex={3} className="font-bold border-right-2">
+            <img src="/topicSymbolRole.png" width="120px" alt="Role" /> Role
+          </Td>
+          <Td cellIndex={4} className="font-bold text-4xl text-blue border-right-2">
+            Protocol / Standard
+          </Td>
+          <Td cellIndex={5} className="font-bold text-4xl text-emerald">
+            Framework / Library
+          </Td>
+        </Tr>
+        {/* ROW 2: Purpose */}
+        <Tr className="border-bottom-2">
+          <Td cellIndex={6} className="font-bold text-4xl border-right-2">
+            <img src="/topicSymbolPurpose.png" width="120px" alt="Purpose" /> Purpose
+          </Td>
+          <Td cellIndex={7} className="text-black text-4xl border-right-2">
+            Connect AI models with external tools and data sources
+          </Td>
+          <Td cellIndex={8} className="text-black text-4xl">
+            Build stateful, multistep agent workflows
+          </Td>
+        </Tr>
+      </tbody>
+    </Table>
+  </RevealElement>,
+
+  <RevealElement key="eraser-scene04" sequenceId={3}>
     <WhiteboardEraser />
   </RevealElement>,
 ];
@@ -1140,43 +1464,44 @@ export const scene03Sequence = [
 // ব্যাকওয়ার্ড কম্প্যাটিবিলিটির জন্য
 export const mainVideoSequence = scene01Sequence;
 
+// সিন কন্টেইনারস
 const Scene01Container = () => (
   <AbsoluteFill id="scene-01">
-    <RevealSequence>
-      {scene01Sequence}
-    </RevealSequence>
+    <RevealSequence>{scene01Sequence}</RevealSequence>
   </AbsoluteFill>
 );
 
 const Scene02Container = () => (
   <AbsoluteFill id="scene-02">
-    <RevealSequence>
-      {scene02Sequence}
-    </RevealSequence>
+    <RevealSequence>{scene02Sequence}</RevealSequence>
+  </AbsoluteFill>
+);
+
+const Scene04Container = () => (
+  <AbsoluteFill id="scene-04">
+    <RevealSequence>{scene04Sequence}</RevealSequence>
   </AbsoluteFill>
 );
 
 const Scene03Container = () => (
   <AbsoluteFill id="scene-03">
-    <RevealSequence>
-      {scene03Sequence}
-    </RevealSequence>
+    <RevealSequence>{scene03Sequence}</RevealSequence>
   </AbsoluteFill>
 );
 
+// ==========================================
+// 🚀 MAIN ENGINE COMPONENT
+// ==========================================
 export const MainVideoEngine = () => {
   const FPS = 30;
 
-  // Scene 01 ডিউরেশন ক্যালকুলেট করা
+  // প্রতিটি সিনের ফ্রেম ডিউরেশন ক্যালকুলেট করা
   const scene01Duration = getSequenceDurationInFrames(scene01Sequence, FPS);
-  
-  // Scene 02 ডিউরেশন ক্যালকুলেট করা
   const scene02Duration = getSequenceDurationInFrames(scene02Sequence, FPS);
-  
-  // Scene 03 ডিউরেশন ক্যালকুলেট করা
+  const scene04Duration = getSequenceDurationInFrames(scene04Sequence, FPS);
   const scene03Duration = getSequenceDurationInFrames(scene03Sequence, FPS);
 
-  // ফ্রেম পজিশন ক্যালকুলেট করা
+  // গ্লোবাল টাইমলাইন ফ্রেম ট্র্যাকিং
   let currentFrame = 0;
   
   const scene01StartFrame = currentFrame;
@@ -1184,6 +1509,10 @@ export const MainVideoEngine = () => {
   
   const scene02StartFrame = currentFrame;
   currentFrame += scene02Duration;
+
+  // টেবিল সিনটিকে ৩ নম্বর সিনের (Thank you) আগে প্লেস করা হলো লজিক্যালি
+  const scene04StartFrame = currentFrame;
+  currentFrame += scene04Duration;
   
   const scene03StartFrame = currentFrame;
 
@@ -1200,7 +1529,12 @@ export const MainVideoEngine = () => {
         <Scene02Container />
       </Sequence>
 
-      {/* SCENE 03 */}
+      {/* SCENE 04 (Table Comparison) */}
+      <Sequence from={scene04StartFrame} durationInFrames={scene04Duration}>
+        <Scene04Container />
+      </Sequence>
+
+      {/* SCENE 03 (Thank You Slide) */}
       <Sequence from={scene03StartFrame} durationInFrames={scene03Duration}>
         <Scene03Container />
       </Sequence>
@@ -1208,7 +1542,6 @@ export const MainVideoEngine = () => {
     </AbsoluteFill>
   );
 };
-
 
 ###########################################
 src\master.css
@@ -1858,23 +2191,25 @@ src\Root.jsx
 ###########################################
 import React from 'react';
 import { Composition } from 'remotion';
-import { MainVideoEngine, scene01Sequence, scene02Sequence, scene03Sequence } from './MainVideoEngine';
+import { MainVideoEngine, scene01Sequence, scene02Sequence, scene03Sequence, scene04Sequence } from './MainVideoEngine';
 import { getSequenceDurationInFrames } from './whiteboard.config';
 
 const FPS = 30;
-const END_HOLD_IN_FRAMES = FPS;
+const END_HOLD_IN_FRAMES = FPS * 3;
 
 export const RemotionRoot = () => {
   // প্রতিটি সিনের আসল ডিউরেশন ক্যালকুলেট করা
   const scene01Duration = getSequenceDurationInFrames(scene01Sequence, FPS);
   const scene02Duration = getSequenceDurationInFrames(scene02Sequence, FPS);
   const scene03Duration = getSequenceDurationInFrames(scene03Sequence, FPS);
+  const scene04Duration = getSequenceDurationInFrames(scene04Sequence, FPS);
   
   // মোট ডিউরেশন = Scene01 + Scene02 + Scene03 + End Hold
   const totalDuration = 
     scene01Duration + 
     scene02Duration + 
     scene03Duration + 
+    scene04Duration +
     END_HOLD_IN_FRAMES;
 
   return (
@@ -2353,36 +2688,28 @@ src\whiteboard.config.js
 import React from 'react';
 import { parseClassNameToStyle } from './utils/styleResolver';
 
-
-
-
-// 🎯 শুধুমাত্র হেডার টেক্সটের (Heading) জন্য স্পেসিফিক কনফিগ
 export const headingAnimationConfig = {
-  speedMultiplier: 1.0,   // 🚀 হেডিং লেখার স্পিড মাল্টিপ্লায়ার
+ speedMultiplier: 1.0,   // 🚀 হেডিং লেখার স্পিড মাল্টিপ্লায়ার
   waveAmplitude: 16,      // 🌊 হেডিং লেখার সময় হাতের উপর-নিচ ঢেউয়ের সাইজ (পিক্সেলে)
   waveFrequency: 0.8,     // ⚡ হেডিং এর জন্য হাত নাচার ফ্রিকোয়েন্সি 
   microNoise: 1.5,        // ✒️ পেনের ডগার সূক্ষ্ম রিয়েলিস্টিক ভাইব্রেশন
 };
 
-// 🟢 সম্পূর্ণ আলাদা আন্ডারলাইন এলিমেন্টের জন্য ডেডিকেটেড কনфিগ
 export const underlineAnimationConfig = {
-  speedMultiplier: 1.0,   // 🚀 আন্ডারলাইন ড্র বা রিভিল হওয়ার মেইন স্পিড চাবি
+  speedMultiplier: 0.6,   // 🚀 আন্ডারলাইন ড্র বা রিভিল হওয়ার মেইন স্পিড চাবি
   waveAmplitude: 8,       // 🌊 লাইন টানার সময় হাত কতটা উপর-নিচ কাঁপবে (হেডিংয়ের চেয়ে একটু কম হবে)
   waveFrequency: 1.2,     // ⚡ লাইনের সময় হাত কত ঘনঘন কাঁপবে
   microNoise: 1.2,        // ✒️ পেনের ডগার সূক্ষ্ম রিয়েলিস্টিক ভাইব্রেশন
 };
 
-// 🎯 শুধুমাত্র প্যারাগ্রাফ টেক্সটের (Paragraph) রাইটিং কনফিগ
 export const paragraphAnimationConfig = {
   speedMultiplier: 1.0,
-  framesPerCharacter: 1.5, // প্রতি character লিখতে গড়ে ১.৫ frame
+ framesPerCharacter: 1.5, // প্রতি character লিখতে গড়ে ১.৫ frame
   waveAmplitude: 6,       // 🌊 ছোট ফন্টের জন্য হাতের ঢেউয়ের সাইজ ছোট (পিক্সেলে)
   waveFrequency: 1.0,     // ⚡ ফাস্ট রাইটিংয়ের জন্য হালকা ফ্রিকোয়েন্সি 
   microNoise: 1.0,        // ✒️ পেনের ডগার রিয়েলিস্টিক ভাইব্রেশন
 };
 
-
-// 🎯 শুধুমাত্র হেডার টেক্সটের (Heading) জন্য স্পেসিফিক কনফিগ
 export const imageAnimationConfig = {
   speedMultiplier: 1.0,   // 🚀 হেডিং লেখার স্পিড মাল্টিপ্লায়ার
   waveAmplitude: 16,      // 🌊 হেডিং লেখার সময় হাতের উপর-নিচ ঢেউয়ের সাইজ (পিক্সেলে)
@@ -2390,7 +2717,6 @@ export const imageAnimationConfig = {
   microNoise: 1.5,        // ✒️ পেনের ডগার সূক্ষ্ম রিয়েলিস্টিক ভাইব্রেশন
 };
 
-// 🧼 ERASER AND TIMING CONFIGURATION (নতুন নাম এবং প্রপার স্ট্রাকচার)
 export const eraserAnimationConfig = {
   durationInFrames: 50,     // white erase overlay animation duration[cite: 1]
   speedMultiplier: 1.0,     // শুধু erase animation speed control[cite: 1]
@@ -2401,40 +2727,65 @@ export const eraserAnimationConfig = {
 };
 
 
+// 📊 টেবিল অ্যানিমেশনের জন্য সম্পূর্ণ আলাদা ও ডেডিকেটেড কনফিগ
+export const tableAnimationConfig = {
+  speedMultiplier: 1.0,        // 🚀 টেবিল লেখার মেইন স্পিড চাবি
+  framesPerCharacter: 1.2,     // প্রতি ক্যারেক্টার লিখতে ফ্রেম বরাদ্দ (টেবিলে একটু ফাস্ট লেখার জন্য ১.২ দেওয়া হলো)
+  imageVirtualCharacters: 25,  // টেবিলে প্রতিটা ইমেজ বা আইকন ড্র করার জন্য ২৫ ক্যারেক্টারের সমপরিমাণ বাফার টাইম
+};
 
 
 
-
-
+// টেবিল বা অন্য যেকোনো ডিপ নেস্টেড এলিমেন্টের ক্যারেক্টার কাউন্ট করার নিখুঁত রিকার্সিভ ফাংশন
 const textLength = (node) => {
+  if (!node) return 0;
   if (typeof node === 'string' || typeof node === 'number') {
     return String(node).length;
   }
-
-  if (!React.isValidElement(node)) {
-    return 0;
+  
+  if (node.props && node.props.children) {
+    return React.Children.toArray(node.props.children).reduce(
+      (sum, child) => sum + textLength(child),
+      0
+    );
+  }
+  
+  if (Array.isArray(node)) {
+    return node.reduce((sum, child) => sum + textLength(child), 0);
   }
 
-  return React.Children.toArray(node.props.children).reduce(
-    (total, child) => total + textLength(child),
-    0,
-  );
+  // আমাদের নতুন tableAnimationConfig থেকে ইমেজ বাফারিং টাইম রিড করবে
+  if (node.type === 'img' || node.type === 'Image') {
+    return tableAnimationConfig.imageVirtualCharacters; 
+  }
+
+  return 0;
 };
 
-// Content এবং config থেকে একটি element-এর natural animation timing বের করে।
 export const getAnimationFrames = (element, fps) => {
-  const props = element?.props || {};
-  const parsedStyle = parseClassNameToStyle(props.className || '');
-  const style = { ...parsedStyle, ...props.style };
+  if (!element) return { animationFrames: fps, progressEnd: 100 };
 
+  const props = element.props || {};
+  
+  // 🎯 মেইন ফিক্স: RevealElement বা অন্য কোনো র্যাপার থাকলে তার ভেতরের আসল কোর চাইল্ডকে এক্সট্র্যাক্ট করা
+  let targetElement = element;
+  if (props.children && React.isValidElement(props.children)) {
+    targetElement = props.children;
+  } else if (element.type?.name === 'RevealElement') {
+    targetElement = props.children;
+  }
+
+  const targetProps = targetElement?.props || {};
+  const parsedStyle = parseClassNameToStyle(targetProps.className || '');
+  const style = { ...parsedStyle, ...targetProps.style };
+  const animationType = targetElement?.type?.animationType;
 
   let baseFrames;
   let speedMultiplier = 1;
 
-  switch (element?.type?.animationType) {
-
+  switch (animationType) {
     case 'heading':
-      baseFrames = Math.max(Math.round(fps * 0.6), textLength(element) * 4);
+      baseFrames = Math.max(Math.round(fps * 0.6), textLength(targetElement) * 4);
       speedMultiplier = headingAnimationConfig.speedMultiplier;
       break;
 
@@ -2448,10 +2799,24 @@ export const getAnimationFrames = (element, fps) => {
     case 'paragraph':
       baseFrames = Math.max(
         fps,
-        Math.ceil(textLength(element) * paragraphAnimationConfig.framesPerCharacter),
+        Math.ceil(textLength(targetElement) * paragraphAnimationConfig.framesPerCharacter),
       );
       speedMultiplier = paragraphAnimationConfig.speedMultiplier;
       break;
+
+    // 📊 টেবিল টাইপের জন্য এখন কাস্টম নোড ট্রাভার্সাল ১০০% কাজ করবে
+    case 'table': {
+      const target = targetElement.type?.getTargetElement 
+        ? targetElement.type.getTargetElement(targetProps) 
+        : targetElement;
+
+      baseFrames = Math.max(
+        fps,
+        Math.ceil(textLength(target) * tableAnimationConfig.framesPerCharacter),
+      );
+      speedMultiplier = tableAnimationConfig.speedMultiplier;
+      break;
+    }
 
     case 'image': 
       baseFrames = Math.round(fps * 3.0);
@@ -2459,7 +2824,6 @@ export const getAnimationFrames = (element, fps) => {
       break;
 
     case 'eraser':
-      //baseFrames = eraserAnimationConfig.durationInFrames;
       baseFrames = Math.round(fps * 3.0);
       speedMultiplier = eraserAnimationConfig.speedMultiplier;
       break;
@@ -2473,41 +2837,13 @@ export const getAnimationFrames = (element, fps) => {
     progressEnd: 100 / speedMultiplier,
   };
 };
-
-
-
-
-
-export const getSequenceDurationInFrames_Backup = (children, fps) => {
-  const elements = React.Children.toArray(children).filter(React.isValidElement);
-  const sequenceIds = [...new Set(elements.map((element) => element.props.sequenceId))];
-
-  return sequenceIds.reduce((totalFrames, sequenceId) => {
-    const sequenceFrames = elements
-      .filter((element) => element.props.sequenceId === sequenceId)
-      .map((element) => getAnimationFrames(element.props.children, fps).animationFrames);
-
-    return totalFrames + Math.max(...sequenceFrames);
-  }, 0);
-};
-
-
 export const getSequenceDurationInFrames = (children, fps) => {
-  // রিঅ্যাক্ট চাইল্ড নোড ফিল্টারিং
   const elements = React.Children.toArray(children).filter(React.isValidElement);
-  const sequenceIds = [...new Set(elements.map((element) => element.props.sequenceId))];
-
+  const sequenceIds = [...new Set(elements.map((element) => element.props.sequenceId))].sort((a, b) => a - b);
   return sequenceIds.reduce((totalFrames, sequenceId) => {
     const sequenceFrames = elements
       .filter((element) => element.props.sequenceId === sequenceId)
-      .map((element) => {
-        // 🎯 ম্যাজিক সেফটি ফিক্স: 
-        // যদি element নিজেই সরাসরি H1/Image/Hr হয় তবে সেটাই পাঠাবে, 
-        // আর যদি RevealElement দিয়ে মোড়ানো থাকে, তবে তার পেটের children-কে পাঠাবে।
-        const innerTarget = element.props.sequenceId && element.props.children ? element.props.children : element;
-        
-        return getAnimationFrames(innerTarget, fps).animationFrames;
-      });
+      .map((element) => getAnimationFrames(element, fps).animationFrames);
 
     return totalFrames + Math.max(...sequenceFrames);
   }, 0);

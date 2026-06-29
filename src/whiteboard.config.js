@@ -141,6 +141,12 @@ export const getAnimationFrames = (element, fps) => {
       speedMultiplier = eraserAnimationConfig.speedMultiplier;
       break;
 
+    case 'arrowWithText':
+      // তীর + টেক্সটের ক্যারেক্টার মিলিয়ে ফ্রেম বন্টন
+      baseFrames = Math.max(fps * 2.5, textLength(targetElement) * 5);
+      speedMultiplier = paragraphAnimationConfig.speedMultiplier;
+      break;
+
     default:
       baseFrames = fps;
   }
