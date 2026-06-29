@@ -65,7 +65,7 @@ export const Hr = ({ color, progress, style: inlineStyle, className = '' }) => {
     <>
       {/* 🟢 ১. পিউর আলাদা গ্রিন আন্ডারলাইন এলিমেন্ট (কোনো টেক্সটের সাথে যুক্ত নয়) */}
       <div
-        classname = {className}
+        className = {className}
         style={{
           ...style,
           position: 'absolute',
