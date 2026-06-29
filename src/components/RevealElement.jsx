@@ -16,7 +16,7 @@ export const RevealSequence = ({children}) => {
     const group = elements.filter((element) => element.props.sequenceId === sequenceId);
     const groupFrames = Math.max(
       ...group.map(
-        (element) => getAnimationFrames(element.props.children, fps).animationFrames,
+        (element) => getAnimationFrames(element, fps).animationFrames,
       ),
     );
 
@@ -25,8 +25,8 @@ export const RevealSequence = ({children}) => {
   }
 
   return elements.map((element) => {
-    const ownTiming = getAnimationFrames(element.props.children, fps);
     const sequenceTiming = timeline.get(element.props.sequenceId);
+    const ownTiming = getAnimationFrames(element, fps);
     return React.cloneElement(element, {...sequenceTiming, ...ownTiming});
   });
 };
@@ -41,10 +41,7 @@ export const RevealElement = ({
 }) => {
   const frame = useCurrentFrame();
 
-  if (frame < startFrame) {
-    return null;
-  }
-
+  // প্রগ্রেস ক্যালকুলেশন - নিজস্ব স্টার্ট ফ্রেমের সাপেক্ষে
   const progress = interpolate(
     frame,
     [startFrame, startFrame + animationFrames],
@@ -52,8 +49,11 @@ export const RevealElement = ({
     {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'},
   );
 
+  // এলিমেন্টটি মাউন্ট থাকা দরকার যাতে রিফ কাজ করে, কিন্তু স্টার্ট ফ্রেমের আগে হাইড থাকবে
+  const isStarted = frame >= startFrame;
+
   return (
-    <div style={{position: 'absolute', top: y, left: x}}>
+    <div style={{position: 'absolute', top: y, left: x, visibility: isStarted ? 'visible' : 'hidden'}}>
       {React.cloneElement(children, {progress})}
     </div>
   );

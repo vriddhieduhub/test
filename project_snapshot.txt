@@ -596,10 +596,8 @@ const flattenNodes = (children) => {
       }
     } else if (React.isValidElement(node)) {
       const nodeProps = node.props || {};
-      
       let combinedStyle = { ...inheritedProps.style, ...nodeProps.style };
       let combinedClassName = [inheritedProps.className, nodeProps.className].filter(Boolean).join(' ');
-
       React.Children.forEach(nodeProps.children, (child) => 
         traverse(child, { style: combinedStyle, className: combinedClassName, type: node.type })
       );
@@ -626,7 +624,7 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
   const flatChars = useMemo(() => flattenNodes(children), [children]);
   const totalChars = flatChars.length;
 
-  // 🎯 আসল ফিক্স: ব্রাউজারের DOM লেআউট থেকে অক্ষরের রিয়েল-টাইম X-Y পজিশন ম্যাপ বের করা
+  // DOM থেকে নিখুঁত পজিশন ট্র্যাকিং
   useEffect(() => {
     if (!containerRef.current) return;
     const spans = containerRef.current.querySelectorAll('.live-char');
@@ -634,15 +632,14 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
     
     spans.forEach((span) => {
       positions.push({
-        // span.offsetLeft + span.offsetWidth দিলে অক্ষরের ঠিক ডান প্রান্তের (ডগা) পিক্সেল পাওয়া যায়
         x: span.offsetLeft + span.offsetWidth, 
-        y: span.offsetTop,                     
+        y: span.offsetTop, 
         width: span.offsetWidth,
         height: span.offsetHeight
       });
     });
     setCharPositions(positions);
-  }, [flatChars, totalChars, frame]); // 👈 frame ডিফেন্ডেন্সি দেওয়া হলো যাতে প্রতি ফ্রেমে পজিশন রিয়েল-টাইম রি-ক্যালকুলেট হয়
+  }, [flatChars, totalChars, frame]);
 
   // স্পিড মাল্টিপ্লায়ার প্রগ্রেস রিম্যাপ
   const adjustedProgress = interpolate(
@@ -659,7 +656,6 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
   const currentCharIndex = Math.min(Math.floor(globalCharProgress), totalChars - 1);
   const charRemainder = globalCharProgress - currentCharIndex;
   const charsToShow = Math.floor(globalCharProgress);
-
   let handBaseX = 0;
   let handBaseY = 0;
 
@@ -667,7 +663,6 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
     const c1 = charPositions[currentCharIndex];
     const c2 = charPositions[Math.min(currentCharIndex + 1, totalChars - 1)];
 
-    // যদি c2 এলিমেন্টটি নিচের লাইনে র‍্যাপ হয়, তবে হাত এক ফ্রেমেই নিখুঁতভাবে নিচের লাইনে নেমে আসবে
     if (c2 && c1 && c2.y > c1.y) {
       handBaseX = charRemainder < 0.1 ? c1.x : c2.x - c2.width;
       handBaseY = charRemainder < 0.1 ? c1.y : c2.y;
@@ -686,16 +681,12 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
   const externalTop = style?.top ? parseFloat(style.top) : 0;
 
   const handX = handBaseX + writeOffsetX + externalLeft;
-
-  // 🌊 প্যারাগ্রাফের জন্য সাইন-ওয়েভ ও র্যান্ডমনেস
   const isWritingActive = adjustedProgress > 0 && adjustedProgress < 100;
   const wave1 = Math.sin(frame * animationConfig.waveFrequency);
   const wave2 = Math.cos(frame * (animationConfig.waveFrequency * 0.55));
-  
   const compoundWaveY = isWritingActive 
     ? (wave1 * 0.6 + wave2 * 0.4) * animationConfig.waveAmplitude 
     : 0;
-
   const humanNoiseX = isWritingActive ? ((Math.random() - 0.5) * animationConfig.microNoise) : 0;
   const humanNoiseY = isWritingActive ? ((Math.random() - 0.5) * animationConfig.microNoise) : 0;
 
@@ -710,16 +701,17 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
         style={{
           ...style,
           position: 'absolute',
-          display: 'inline-block',
+          display: 'block', // 👈 ফিক্স ১: inline-block এর জায়গায় পিউর block
           top: style?.top || '0px',
           left: style?.left || '0px',
           fontSize: `${fontSize}px`,
           color: color || style?.color || '#000000',
           fontFamily: fontFamily,
           margin: style?.margin || 0,
-         
           lineHeight: style?.lineHeight || 1.6,
           width: style?.width || '1600px', 
+          wordBreak: 'keep-all', // 👈 ফিক্স ২: শব্দের মাঝখানে ভাঙা কঠোরভাবে নিষিদ্ধ
+          wordWrap: 'break-word',
         }}
       >
         {flatChars.map((item, idx) => {
@@ -736,9 +728,8 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
               className={`live-char ${item.className}`}
               style={{
                 ...item.style,
-                display: 'inline-block',
-                whiteSpace: 'pre',
-                // 🚀 ফিক্স: ক্যারেক্টারগুলো ডম-এ স্পেস ধরে রাখবে যাতে শুরুতে offsetLeft ভুল না আসে
+                display: 'inline', // 👈 ফিক্স ৩: inline-block এর বদলে পিউর inline ব্যবহার করা হলো যাতে ব্রাউজার স্বাভাবিক শব্দ গঠন বোঝে
+                whiteSpace: 'pre-wrap', // 👈 ফিক্স ৪: pre এর জায়গায় pre-wrap যাতে লাইনের শেষে অটোমেটিক র‍্যাপ হয় কিন্তু স্পেস বজায় থাকে
                 opacity: isVisible ? 1 : 0, 
               }}
             >
@@ -811,9 +802,10 @@ src\components\types\WhiteboardEraser.jsx
 import React from 'react';
 import { useCurrentFrame, Img, staticFile } from 'remotion';
 import { parseClassNameToStyle } from '../../utils/styleResolver';
+import { eraserAnimationConfig } from '../../whiteboard.config'; // 👈 কনফিগ ইমপোর্ট করা হলো
 
 const PINK_OVERLAY_SVG = `data:image/svg+xml;utf8,${encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" preserveAspectRatio="none"><rect width="1920" height="1080" fill="#ff8ad8" /></svg>',
+  '<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" preserveAspectRatio="none"><rect width="1920" height="1080" fill="#fff" /></svg>',
 )}`;
 
 export const WhiteboardEraser = ({
@@ -834,11 +826,33 @@ export const WhiteboardEraser = ({
 
   if (progress === 0) return null;
 
-  // Strict diagonal: top-left -> bottom-right corner
+  // ১. বেস ডায়াগোনাল পাথ
   const travelProgress = progress / 100;
-  const handX = externalLeft + travelProgress * (width - 180);
-  const handY = externalTop + travelProgress * (height - 180);
+  const baseHandX = externalLeft + travelProgress * (width - 180);
+  const baseHandY = externalTop + travelProgress * (height - 180);
 
+  // ==========================================================
+  // 🧼 🎯 কনফিগ থেকে ডাইনামিক ঘষামাজা লজিক
+  // ==========================================================
+  const isWritingActive = progress > 0 && progress < 100;
+
+  // 🚀 এখন সরাসরি আপনার whiteboard.config.js থেকে ভ্যালু দুটি আসছে
+  const scrubFrequency = eraserAnimationConfig.scrubFrequency || 1.6;  
+  const scrubAmplitude = eraserAnimationConfig.scrubAmplitude || 220;  
+
+  // সাইন ওয়েভ মোশন
+  const scrubOffset = isWritingActive 
+    ? Math.sin(frame * scrubFrequency) * scrubAmplitude 
+    : 0;
+
+  const handX = baseHandX + scrubOffset;
+  const handY = baseHandY - (scrubOffset * 0.5); 
+
+  // মাইক্রো ভাইব্রেশন
+  const microNoiseX = isWritingActive ? (Math.random() - 0.5) * 3 : 0;
+  const microNoiseY = isWritingActive ? (Math.random() - 0.5) * 3 : 0;
+
+  // Clip-path লজিক
   let clipPathString = 'polygon(0% 0%, 0% 0%, 0% 0%)';
   if (progress > 0) {
     if (progress <= 50) {
@@ -850,12 +864,9 @@ export const WhiteboardEraser = ({
     }
   }
 
-  const isWritingActive = progress > 0 && progress < 100;
-  const microNoiseX = isWritingActive ? (Math.random() - 0.5) * 1.5 : 0;
-  const microNoiseY = isWritingActive ? (Math.random() - 0.5) * 1.5 : 0;
-
   return (
     <>
+      {/* ১. বোর্ড ইরেজার ওভারলে */}
       <div
         className={className}
         style={{
@@ -882,6 +893,7 @@ export const WhiteboardEraser = ({
         />
       </div>
 
+      {/* ২. ঘষতে থাকা হাতের এলিমেন্ট */}
       {isWritingActive && (
         <Img
           src={staticFile('/finalHandEraser.png')}
@@ -901,7 +913,6 @@ export const WhiteboardEraser = ({
 };
 
 WhiteboardEraser.animationType = 'eraser';
-
 
 ###########################################
 src\Composition.jsx
@@ -2381,12 +2392,13 @@ export const imageAnimationConfig = {
 
 // 🧼 ERASER AND TIMING CONFIGURATION (নতুন নাম এবং প্রপার স্ট্রাকচার)
 export const eraserAnimationConfig = {
-  durationInFrames: 50,     // white erase overlay animation duration
-  speedMultiplier: 1.0,     // শুধু erase animation speed control
-  handSweepSpeed: 1.0,      // rubber hand left-right movement speed
-  handAmplitudeRatio: 0.5,  // 0-1 এর মধ্যে: board width জুড়ে hand swing range
+  durationInFrames: 50,     // white erase overlay animation duration[cite: 1]
+  speedMultiplier: 1.0,     // শুধু erase animation speed control[cite: 1]
+  handSweepSpeed: 1.0,      // rubber hand left-right movement speed[cite: 1]
+  handAmplitudeRatio: 0.5,  // 0-1 এর মধ্যে: board width জুড়ে hand swing range[cite: 1]
+  scrubFrequency: 1.6,      // ⚡ কনফিগ থেকে: হাত কত দ্রুত এদিক-ওদিক ঘষবে
+  scrubAmplitude: 220,      // ↔️ কনফিগ থেকে: হাত কত বড় এরিয়া নিয়ে ঘষবে
 };
-
 
 
 
