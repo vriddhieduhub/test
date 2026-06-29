@@ -40,12 +40,13 @@ export const imageAnimationConfig = {
 
 // 🧼 ERASER AND TIMING CONFIGURATION (নতুন নাম এবং প্রপার স্ট্রাকচার)
 export const eraserAnimationConfig = {
-  durationInFrames: 50,     // white erase overlay animation duration
-  speedMultiplier: 1.0,     // শুধু erase animation speed control
-  handSweepSpeed: 1.0,      // rubber hand left-right movement speed
-  handAmplitudeRatio: 0.5,  // 0-1 এর মধ্যে: board width জুড়ে hand swing range
+  durationInFrames: 50,     // white erase overlay animation duration[cite: 1]
+  speedMultiplier: 1.0,     // শুধু erase animation speed control[cite: 1]
+  handSweepSpeed: 1.0,      // rubber hand left-right movement speed[cite: 1]
+  handAmplitudeRatio: 0.5,  // 0-1 এর মধ্যে: board width জুড়ে hand swing range[cite: 1]
+  scrubFrequency: 1.6,      // ⚡ কনফিগ থেকে: হাত কত দ্রুত এদিক-ওদিক ঘষবে
+  scrubAmplitude: 220,      // ↔️ কনফিগ থেকে: হাত কত বড় এরিয়া নিয়ে ঘষবে
 };
-
 
 
 

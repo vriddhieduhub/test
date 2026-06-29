@@ -19,10 +19,8 @@ const flattenNodes = (children) => {
       }
     } else if (React.isValidElement(node)) {
       const nodeProps = node.props || {};
-      
       let combinedStyle = { ...inheritedProps.style, ...nodeProps.style };
       let combinedClassName = [inheritedProps.className, nodeProps.className].filter(Boolean).join(' ');
-
       React.Children.forEach(nodeProps.children, (child) => 
         traverse(child, { style: combinedStyle, className: combinedClassName, type: node.type })
       );
@@ -49,7 +47,7 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
   const flatChars = useMemo(() => flattenNodes(children), [children]);
   const totalChars = flatChars.length;
 
-  // 🎯 আসল ফিক্স: ব্রাউজারের DOM লেআউট থেকে অক্ষরের রিয়েল-টাইম X-Y পজিশন ম্যাপ বের করা
+  // DOM থেকে নিখুঁত পজিশন ট্র্যাকিং
   useEffect(() => {
     if (!containerRef.current) return;
     const spans = containerRef.current.querySelectorAll('.live-char');
@@ -57,15 +55,14 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
     
     spans.forEach((span) => {
       positions.push({
-        // span.offsetLeft + span.offsetWidth দিলে অক্ষরের ঠিক ডান প্রান্তের (ডগা) পিক্সেল পাওয়া যায়
         x: span.offsetLeft + span.offsetWidth, 
-        y: span.offsetTop,                     
+        y: span.offsetTop, 
         width: span.offsetWidth,
         height: span.offsetHeight
       });
     });
     setCharPositions(positions);
-  }, [flatChars, totalChars, frame]); // 👈 frame ডিফেন্ডেন্সি দেওয়া হলো যাতে প্রতি ফ্রেমে পজিশন রিয়েল-টাইম রি-ক্যালকুলেট হয়
+  }, [flatChars, totalChars, frame]);
 
   // স্পিড মাল্টিপ্লায়ার প্রগ্রেস রিম্যাপ
   const adjustedProgress = interpolate(
@@ -82,7 +79,6 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
   const currentCharIndex = Math.min(Math.floor(globalCharProgress), totalChars - 1);
   const charRemainder = globalCharProgress - currentCharIndex;
   const charsToShow = Math.floor(globalCharProgress);
-
   let handBaseX = 0;
   let handBaseY = 0;
 
@@ -90,7 +86,6 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
     const c1 = charPositions[currentCharIndex];
     const c2 = charPositions[Math.min(currentCharIndex + 1, totalChars - 1)];
 
-    // যদি c2 এলিমেন্টটি নিচের লাইনে র‍্যাপ হয়, তবে হাত এক ফ্রেমেই নিখুঁতভাবে নিচের লাইনে নেমে আসবে
     if (c2 && c1 && c2.y > c1.y) {
       handBaseX = charRemainder < 0.1 ? c1.x : c2.x - c2.width;
       handBaseY = charRemainder < 0.1 ? c1.y : c2.y;
@@ -109,16 +104,12 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
   const externalTop = style?.top ? parseFloat(style.top) : 0;
 
   const handX = handBaseX + writeOffsetX + externalLeft;
-
-  // 🌊 প্যারাগ্রাফের জন্য সাইন-ওয়েভ ও র্যান্ডমনেস
   const isWritingActive = adjustedProgress > 0 && adjustedProgress < 100;
   const wave1 = Math.sin(frame * animationConfig.waveFrequency);
   const wave2 = Math.cos(frame * (animationConfig.waveFrequency * 0.55));
-  
   const compoundWaveY = isWritingActive 
     ? (wave1 * 0.6 + wave2 * 0.4) * animationConfig.waveAmplitude 
     : 0;
-
   const humanNoiseX = isWritingActive ? ((Math.random() - 0.5) * animationConfig.microNoise) : 0;
   const humanNoiseY = isWritingActive ? ((Math.random() - 0.5) * animationConfig.microNoise) : 0;
 
@@ -133,16 +124,17 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
         style={{
           ...style,
           position: 'absolute',
-          display: 'inline-block',
+          display: 'block', // 👈 ফিক্স ১: inline-block এর জায়গায় পিউর block
           top: style?.top || '0px',
           left: style?.left || '0px',
           fontSize: `${fontSize}px`,
           color: color || style?.color || '#000000',
           fontFamily: fontFamily,
           margin: style?.margin || 0,
-         
           lineHeight: style?.lineHeight || 1.6,
           width: style?.width || '1600px', 
+          wordBreak: 'keep-all', // 👈 ফিক্স ২: শব্দের মাঝখানে ভাঙা কঠোরভাবে নিষিদ্ধ
+          wordWrap: 'break-word',
         }}
       >
         {flatChars.map((item, idx) => {
@@ -159,9 +151,8 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
               className={`live-char ${item.className}`}
               style={{
                 ...item.style,
-                display: 'inline-block',
-                whiteSpace: 'pre',
-                // 🚀 ফিক্স: ক্যারেক্টারগুলো ডম-এ স্পেস ধরে রাখবে যাতে শুরুতে offsetLeft ভুল না আসে
+                display: 'inline', // 👈 ফিক্স ৩: inline-block এর বদলে পিউর inline ব্যবহার করা হলো যাতে ব্রাউজার স্বাভাবিক শব্দ গঠন বোঝে
+                whiteSpace: 'pre-wrap', // 👈 ফিক্স ৪: pre এর জায়গায় pre-wrap যাতে লাইনের শেষে অটোমেটিক র‍্যাপ হয় কিন্তু স্পেস বজায় থাকে
                 opacity: isVisible ? 1 : 0, 
               }}
             >

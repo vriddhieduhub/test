@@ -1,9 +1,10 @@
 import React from 'react';
 import { useCurrentFrame, Img, staticFile } from 'remotion';
 import { parseClassNameToStyle } from '../../utils/styleResolver';
+import { eraserAnimationConfig } from '../../whiteboard.config'; // 👈 কনফিগ ইমপোর্ট করা হলো
 
 const PINK_OVERLAY_SVG = `data:image/svg+xml;utf8,${encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" preserveAspectRatio="none"><rect width="1920" height="1080" fill="#ff8ad8" /></svg>',
+  '<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" preserveAspectRatio="none"><rect width="1920" height="1080" fill="#fff" /></svg>',
 )}`;
 
 export const WhiteboardEraser = ({
@@ -24,11 +25,33 @@ export const WhiteboardEraser = ({
 
   if (progress === 0) return null;
 
-  // Strict diagonal: top-left -> bottom-right corner
+  // ১. বেস ডায়াগোনাল পাথ
   const travelProgress = progress / 100;
-  const handX = externalLeft + travelProgress * (width - 180);
-  const handY = externalTop + travelProgress * (height - 180);
+  const baseHandX = externalLeft + travelProgress * (width - 180);
+  const baseHandY = externalTop + travelProgress * (height - 180);
 
+  // ==========================================================
+  // 🧼 🎯 কনফিগ থেকে ডাইনামিক ঘষামাজা লজিক
+  // ==========================================================
+  const isWritingActive = progress > 0 && progress < 100;
+
+  // 🚀 এখন সরাসরি আপনার whiteboard.config.js থেকে ভ্যালু দুটি আসছে
+  const scrubFrequency = eraserAnimationConfig.scrubFrequency || 1.6;  
+  const scrubAmplitude = eraserAnimationConfig.scrubAmplitude || 220;  
+
+  // সাইন ওয়েভ মোশন
+  const scrubOffset = isWritingActive 
+    ? Math.sin(frame * scrubFrequency) * scrubAmplitude 
+    : 0;
+
+  const handX = baseHandX + scrubOffset;
+  const handY = baseHandY - (scrubOffset * 0.5); 
+
+  // মাইক্রো ভাইব্রেশন
+  const microNoiseX = isWritingActive ? (Math.random() - 0.5) * 3 : 0;
+  const microNoiseY = isWritingActive ? (Math.random() - 0.5) * 3 : 0;
+
+  // Clip-path লজিক
   let clipPathString = 'polygon(0% 0%, 0% 0%, 0% 0%)';
   if (progress > 0) {
     if (progress <= 50) {
@@ -40,12 +63,9 @@ export const WhiteboardEraser = ({
     }
   }
 
-  const isWritingActive = progress > 0 && progress < 100;
-  const microNoiseX = isWritingActive ? (Math.random() - 0.5) * 1.5 : 0;
-  const microNoiseY = isWritingActive ? (Math.random() - 0.5) * 1.5 : 0;
-
   return (
     <>
+      {/* ১. বোর্ড ইরেজার ওভারলে */}
       <div
         className={className}
         style={{
@@ -72,6 +92,7 @@ export const WhiteboardEraser = ({
         />
       </div>
 
+      {/* ২. ঘষতে থাকা হাতের এলিমেন্ট */}
       {isWritingActive && (
         <Img
           src={staticFile('/finalHandEraser.png')}
