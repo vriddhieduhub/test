@@ -1,67 +1,32 @@
 import React from 'react';
-import { AbsoluteFill } from 'remotion';
+import { AbsoluteFill, Sequence } from 'remotion';
 import { RevealElement, RevealSequence } from './components/RevealElement';
+import { WhiteboardEraser } from './components/types/WhiteboardEraser';
+import { getSequenceDurationInFrames } from './whiteboard.config';
 
 import { H1 } from './components/types/H1';
 import { Hr } from './components/types/Hr';
 import { P } from './components/types/P';
 import {Image} from './components/types/Image';
 
-import { ParagraphBlock } from './components/types/ParagraphBlock';
-import { ListBlock } from './components/types/ListBlock';
-import { CodingBlock } from './components/types/CodingBlock';
-
-export const mainVideoSequence_Backup = [
-  <RevealElement key="heading" sequenceId={1} x={60} y={60}>
-    <H1
-      className="font-kalam"
-      style={{ top: '80px', left: '100px', fontSize: '100px', color: '#1714ce' }}
-    >
-      Welcome to MCP Thank you
-    </H1>
-  </RevealElement>,
-  <RevealElement key="second-heading" sequenceId={2} x={60} y={155}>
-    <H1
-      className="font-marker"
-      style={{ top: '80px', left: '100px', fontSize: '58px', color: '#d9480f' }}
-    >
-      Different fonts, same animation
-    </H1>
-  </RevealElement>,
-  <RevealElement key="underline" sequenceId={3} x={60} y={150}>
-    <Hr style={{ top: '200px', left: '105px', width: '1500px', height: '8px', color: '#2bbe0e' }} />
-  </RevealElement>,
-  <RevealElement key="paragraph" sequenceId={4} x={60} y={360}>
-    <P style={{ top: '20px', left: '100px', fontSize: '52px', width: '1350px' }}>
-      <strong>MCP (Model Context Protocol)</strong> is a{' '}
-      <span className="text-red-500">new standard</span>{' '}
-      that enables AI models to{' '}
-      <span className="bg-yellow-200 rounded px-2">communicate with external tools</span>{' '}
-      in a <u className="decoration-emerald-500 decoration-4">secure and structured way</u>. It eliminates{' '}
-      <span className="text-blue-600 font-bold">custom integrations</span>, improves{' '}
-      <span className="text-emerald-500 italic">developer productivity</span>, and makes AI agents{' '}
-      <span className="bg-purple-200 rounded px-2"><strong className="font-bold">more reliable</strong></span> for{' '}
-      <span className="underline decoration-red-500 decoration-double decoration-4">real-world applications</span>.
-    </P>
-  </RevealElement>,
-];
-
-export const mainVideoSequence = [
+// ==========================================
+// SCENE 01: মূল সিন - হেডিং, প্যারাগ্রাফ, ইমেজ ইত্যাদি
+// ==========================================
+export const scene01Sequence = [
   <RevealElement key="heading" sequenceId={1}>
-    {/* ইনলাইন স্টাইলের বদলে ক্লাসনেম পাস করা হলো */}
-    <H1 className="font-kalam top-80 left-100 text-8xl text-blue">
+    <H1 className="font-kalam top-80 left-100 text-8xl text-blue w-1350">
       Welcome to MCP Thank you
     </H1>
   </RevealElement>,
 
   <RevealElement key="second-heading" sequenceId={2}>
-    <H1 className="font-marker top-180 left-100 text-5xl text-orange">
+    <H1 className="font-marker top-180 left-100 text-5xl text-orange w-1350">
       Different fonts, same animation
     </H1>
   </RevealElement>,
 
   <RevealElement key="underline" sequenceId={3}>
-    <Hr className="top-250 left-100 w-1200 h-10 text-green" />
+    <Hr className="top-250 left-100 w-1200 h-10 text-green w-1350" />
   </RevealElement>,
 
   <RevealElement key="mcp-hub-image" sequenceId={4}>
@@ -73,7 +38,7 @@ export const mainVideoSequence = [
   </RevealElement>,
 
   <RevealElement key="paragraph" sequenceId={5}>
-    <P className="font-kalam top-350 left-100 text-4xl w-1350 leading-relaxed">
+    <P className="font-kalam top-350 left-100 text-4xl w-1350 leading-relaxed w-1350">
       <strong>MCP (Model Context Protocol)</strong> is a{' '}
       <span className="text-red">new standard</span>{' '}
       that enables AI models to{' '}
@@ -85,27 +50,125 @@ export const mainVideoSequence = [
       <span className="underline-thick-red">real-world applications</span>.
     </P>
   </RevealElement>,
+
+  <RevealElement key="eraser-scene01" sequenceId={6}>
+    <WhiteboardEraser />
+  </RevealElement>,
 ];
 
+// ==========================================
+// SCENE 02: দ্বিতীয় সিন - হেডার এবং ইমেজ
+// ==========================================
+export const scene02Sequence = [
+  <RevealElement key="scene2-heading" sequenceId={1}>
+    <H1 className="font-kalam top-100 left-100 text-7xl text-purple w-1350">
+      Scene 02: Advanced Features
+    </H1>
+  </RevealElement>,
+
+  <RevealElement key="scene2-image" sequenceId={2}>
+    <Image 
+      src="/mcpclients.png" 
+      alt="Advanced Features"
+      className="top-300 left-100 w-500 h-500 object-contain w-1350" 
+    />
+  </RevealElement>,
+
+  <RevealElement key="scene2-description" sequenceId={3}>
+    <P className="font-kalam top-700 left-100 text-3xl w-1350 leading-relaxed text-gray-700">
+      Explore the powerful capabilities and integrations available in the MCP ecosystem.
+    </P>
+  </RevealElement>,
+
+  <RevealElement key="eraser-scene02" sequenceId={4}>
+    <WhiteboardEraser />
+  </RevealElement>,
+];
+
+// ==========================================
+// SCENE 03: তৃতীয় সিন - ধন্যবাদ স্লাইড
+// ==========================================
+export const scene03Sequence = [
+  <RevealElement key="scene3-thank-you" sequenceId={1}>
+    <H1 className="font-kalam top-400 left-100 text-9xl text-blue font-bold w-1350">
+      Thank You!
+    </H1>
+  </RevealElement>,
+
+  <RevealElement key="scene3-subtitle" sequenceId={2}>
+    <P className="font-marker top-600 left-100 text-5xl text-orange w-1350">
+      Keep building amazing things with MCP
+    </P>
+  </RevealElement>,
+];
+
+// ব্যাকওয়ার্ড কম্প্যাটিবিলিটির জন্য
+export const mainVideoSequence = scene01Sequence;
+
+const Scene01Container = () => (
+  <AbsoluteFill id="scene-01">
+    <RevealSequence>
+      {scene01Sequence}
+    </RevealSequence>
+  </AbsoluteFill>
+);
+
+const Scene02Container = () => (
+  <AbsoluteFill id="scene-02">
+    <RevealSequence>
+      {scene02Sequence}
+    </RevealSequence>
+  </AbsoluteFill>
+);
+
+const Scene03Container = () => (
+  <AbsoluteFill id="scene-03">
+    <RevealSequence>
+      {scene03Sequence}
+    </RevealSequence>
+  </AbsoluteFill>
+);
+
 export const MainVideoEngine = () => {
+  const FPS = 30;
+
+  // Scene 01 ডিউরেশন ক্যালকুলেট করা
+  const scene01Duration = getSequenceDurationInFrames(scene01Sequence, FPS);
+  
+  // Scene 02 ডিউরেশন ক্যালকুলেট করা
+  const scene02Duration = getSequenceDurationInFrames(scene02Sequence, FPS);
+  
+  // Scene 03 ডিউরেশন ক্যালকুলেট করা
+  const scene03Duration = getSequenceDurationInFrames(scene03Sequence, FPS);
+
+  // ফ্রেম পজিশন ক্যালকুলেট করা
+  let currentFrame = 0;
+  
+  const scene01StartFrame = currentFrame;
+  currentFrame += scene01Duration;
+  
+  const scene02StartFrame = currentFrame;
+  currentFrame += scene02Duration;
+  
+  const scene03StartFrame = currentFrame;
+
   return (
-    <AbsoluteFill style={{ backgroundColor: 'white', padding: '50px', fontFamily: 'sans-serif' }}>
+    <AbsoluteFill style={{ backgroundColor: 'white', fontFamily: 'sans-serif' }}>
       
-      <div id="scene-01" style={{ position: 'relative', width: '100%', height: '100%' }}>
-        
-        {/* Sequence IDs alone control the order; no duration is needed. */}
-        <RevealSequence>
-          {mainVideoSequence}
-        </RevealSequence>
+      {/* SCENE 01 */}
+      <Sequence from={scene01StartFrame} durationInFrames={scene01Duration}>
+        <Scene01Container />
+      </Sequence>
 
-      </div>
+      {/* SCENE 02 */}
+      <Sequence from={scene02StartFrame} durationInFrames={scene02Duration}>
+        <Scene02Container />
+      </Sequence>
 
-
-
-      {/* ==========================================
-          SCENE 02: এর পরের দৃশ্য (ভবিষ্যতে যোগ করার জন্য)
-          ========================================== */}
-      {/* <div id="scene-02"> ... </div> */}
+      {/* SCENE 03 */}
+      <Sequence from={scene03StartFrame} durationInFrames={scene03Duration}>
+        <Scene03Container />
+      </Sequence>
 
     </AbsoluteFill>
   );

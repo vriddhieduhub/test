@@ -1,5 +1,3 @@
-/* eslint-disable no-debugger */
-/* eslint-disable no-undef */
 import React from 'react';
 import { parseClassNameToStyle } from './utils/styleResolver';
 
@@ -42,8 +40,10 @@ export const imageAnimationConfig = {
 
 // 🧼 ERASER AND TIMING CONFIGURATION (নতুন নাম এবং প্রপার স্ট্রাকচার)
 export const eraserAnimationConfig = {
-  eraserDuration: 45,       // স্ক্রিন মুছতে টোটাল ফ্রেম সংখ্যা (১.৫ সেকেন্ড)
-  sceneDelay: 15,          // সিনের এলিমেন্ট শেষ হওয়ার পর ইরেজার কল করার আগের হোল্ড গ্যাপ ফ্রেম
+  durationInFrames: 50,     // white erase overlay animation duration
+  speedMultiplier: 1.0,     // শুধু erase animation speed control
+  handSweepSpeed: 1.0,      // rubber hand left-right movement speed
+  handAmplitudeRatio: 0.5,  // 0-1 এর মধ্যে: board width জুড়ে hand swing range
 };
 
 
@@ -106,9 +106,9 @@ export const getAnimationFrames = (element, fps) => {
       break;
 
     case 'eraser':
-      // বোর্ডটি উপর থেকে নিচে মুছতে ২.৫ সেকেন্ড বা ৭৫ ফ্রেম বরাদ্দ করা হলো (smooth & elegant)
-      baseFrames = Math.round(fps * 2.5);
-      speedMultiplier = 1.0;
+      //baseFrames = eraserAnimationConfig.durationInFrames;
+      baseFrames = Math.round(fps * 3.0);
+      speedMultiplier = eraserAnimationConfig.speedMultiplier;
       break;
 
     default:

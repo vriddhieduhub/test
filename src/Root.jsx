@@ -1,17 +1,29 @@
 import React from 'react';
 import { Composition } from 'remotion';
-import { MainVideoEngine, mainVideoSequence } from './MainVideoEngine';
+import { MainVideoEngine, scene01Sequence, scene02Sequence, scene03Sequence } from './MainVideoEngine';
 import { getSequenceDurationInFrames } from './whiteboard.config';
 
 const FPS = 30;
 const END_HOLD_IN_FRAMES = FPS;
 
 export const RemotionRoot = () => {
+  // প্রতিটি সিনের আসল ডিউরেশন ক্যালকুলেট করা
+  const scene01Duration = getSequenceDurationInFrames(scene01Sequence, FPS);
+  const scene02Duration = getSequenceDurationInFrames(scene02Sequence, FPS);
+  const scene03Duration = getSequenceDurationInFrames(scene03Sequence, FPS);
+  
+  // মোট ডিউরেশন = Scene01 + Scene02 + Scene03 + End Hold
+  const totalDuration = 
+    scene01Duration + 
+    scene02Duration + 
+    scene03Duration + 
+    END_HOLD_IN_FRAMES;
+
   return (
     <Composition
       id="WhiteboardEngine"
       component={MainVideoEngine}
-      durationInFrames={getSequenceDurationInFrames(mainVideoSequence, FPS) + END_HOLD_IN_FRAMES}
+      durationInFrames={totalDuration}
       fps={FPS}
       width={1920}
       height={1080}
