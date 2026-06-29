@@ -7,7 +7,8 @@ import { getSequenceDurationInFrames } from './whiteboard.config';
 import { H1 } from './components/types/H1';
 import { Hr } from './components/types/Hr';
 import { P } from './components/types/P';
-import {Image} from './components/types/Image';
+import { Image } from './components/types/Image';
+import { Table, Tr, Th, Td } from './components/types/Table'; // নতুন তৈরি করা টেবিল কম্পোনেন্ট
 
 // ==========================================
 // SCENE 01: মূল সিন - হেডিং, প্যারাগ্রাফ, ইমেজ ইত্যাদি
@@ -86,6 +87,59 @@ export const scene02Sequence = [
 ];
 
 // ==========================================
+// SCENE 04: নতুন টেবিল কম্পারিসন সিন (MCP vs LangGraph)
+// ==========================================
+export const scene04Sequence = [
+  <RevealElement key="scene4-heading" sequenceId={1}>
+    <H1 className="font-kalam top-80 left-100 text-6xl text-black font-bold w-full">
+      Comparison: MCP vs LangGraph
+    </H1>
+  </RevealElement>,
+
+<RevealElement key="comparison-table" sequenceId={2}>
+    <Table className="top-220 left-100 w-1700 font-kalam">
+      <thead>
+        <Tr className="bg-gray-100 border-bottom-3">
+          <Th cellIndex={0} className="text-left text-5xl border-right-2">Aspect</Th>
+          <Th cellIndex={1} className="text-left text-5xl text-blue border-right-2">MCP</Th>
+          <Th cellIndex={2} className="text-left text-5xl text-green">LangGraph</Th>
+        </Tr>
+      </thead>
+      <tbody>
+        {/* ROW 1: Role */}
+        <Tr className="border-bottom-2">
+          <Td cellIndex={3} className="font-bold border-right-2">
+            <img src="/topicSymbolRole.png" width="120px" alt="Role" /> Role
+          </Td>
+          <Td cellIndex={4} className="font-bold text-4xl text-blue border-right-2">
+            Protocol / Standard
+          </Td>
+          <Td cellIndex={5} className="font-bold text-4xl text-emerald">
+            Framework / Library
+          </Td>
+        </Tr>
+        {/* ROW 2: Purpose */}
+        <Tr className="border-bottom-2">
+          <Td cellIndex={6} className="font-bold text-4xl border-right-2">
+            <img src="/topicSymbolPurpose.png" width="120px" alt="Purpose" /> Purpose
+          </Td>
+          <Td cellIndex={7} className="text-black text-4xl border-right-2">
+            Connect AI models with external tools and data sources
+          </Td>
+          <Td cellIndex={8} className="text-black text-4xl">
+            Build stateful, multistep agent workflows
+          </Td>
+        </Tr>
+      </tbody>
+    </Table>
+  </RevealElement>,
+
+  <RevealElement key="eraser-scene04" sequenceId={3}>
+    <WhiteboardEraser />
+  </RevealElement>,
+];
+
+// ==========================================
 // SCENE 03: তৃতীয় সিন - ধন্যবাদ স্লাইড
 // ==========================================
 export const scene03Sequence = [
@@ -105,43 +159,44 @@ export const scene03Sequence = [
 // ব্যাকওয়ার্ড কম্প্যাটিবিলিটির জন্য
 export const mainVideoSequence = scene01Sequence;
 
+// সিন কন্টেইনারস
 const Scene01Container = () => (
   <AbsoluteFill id="scene-01">
-    <RevealSequence>
-      {scene01Sequence}
-    </RevealSequence>
+    <RevealSequence>{scene01Sequence}</RevealSequence>
   </AbsoluteFill>
 );
 
 const Scene02Container = () => (
   <AbsoluteFill id="scene-02">
-    <RevealSequence>
-      {scene02Sequence}
-    </RevealSequence>
+    <RevealSequence>{scene02Sequence}</RevealSequence>
+  </AbsoluteFill>
+);
+
+const Scene04Container = () => (
+  <AbsoluteFill id="scene-04">
+    <RevealSequence>{scene04Sequence}</RevealSequence>
   </AbsoluteFill>
 );
 
 const Scene03Container = () => (
   <AbsoluteFill id="scene-03">
-    <RevealSequence>
-      {scene03Sequence}
-    </RevealSequence>
+    <RevealSequence>{scene03Sequence}</RevealSequence>
   </AbsoluteFill>
 );
 
+// ==========================================
+// 🚀 MAIN ENGINE COMPONENT
+// ==========================================
 export const MainVideoEngine = () => {
   const FPS = 30;
 
-  // Scene 01 ডিউরেশন ক্যালকুলেট করা
+  // প্রতিটি সিনের ফ্রেম ডিউরেশন ক্যালকুলেট করা
   const scene01Duration = getSequenceDurationInFrames(scene01Sequence, FPS);
-  
-  // Scene 02 ডিউরেশন ক্যালকুলেট করা
   const scene02Duration = getSequenceDurationInFrames(scene02Sequence, FPS);
-  
-  // Scene 03 ডিউরেশন ক্যালকুলেট করা
+  const scene04Duration = getSequenceDurationInFrames(scene04Sequence, FPS);
   const scene03Duration = getSequenceDurationInFrames(scene03Sequence, FPS);
 
-  // ফ্রেম পজিশন ক্যালকুলেট করা
+  // গ্লোবাল টাইমলাইন ফ্রেম ট্র্যাকিং
   let currentFrame = 0;
   
   const scene01StartFrame = currentFrame;
@@ -149,6 +204,10 @@ export const MainVideoEngine = () => {
   
   const scene02StartFrame = currentFrame;
   currentFrame += scene02Duration;
+
+  // টেবিল সিনটিকে ৩ নম্বর সিনের (Thank you) আগে প্লেস করা হলো লজিক্যালি
+  const scene04StartFrame = currentFrame;
+  currentFrame += scene04Duration;
   
   const scene03StartFrame = currentFrame;
 
@@ -165,7 +224,12 @@ export const MainVideoEngine = () => {
         <Scene02Container />
       </Sequence>
 
-      {/* SCENE 03 */}
+      {/* SCENE 04 (Table Comparison) */}
+      <Sequence from={scene04StartFrame} durationInFrames={scene04Duration}>
+        <Scene04Container />
+      </Sequence>
+
+      {/* SCENE 03 (Thank You Slide) */}
       <Sequence from={scene03StartFrame} durationInFrames={scene03Duration}>
         <Scene03Container />
       </Sequence>

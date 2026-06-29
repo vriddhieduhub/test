@@ -39,30 +39,58 @@ export const eraserAnimationConfig = {
   scrubAmplitude: 220,      // ↔️ কনফিগ থেকে: হাত কত বড় এরিয়া নিয়ে ঘষবে
 };
 
+
+// 📊 টেবিল অ্যানিমেশনের জন্য সম্পূর্ণ আলাদা ও ডেডিকেটেড কনফিগ
+export const tableAnimationConfig = {
+  speedMultiplier: 1.0,        // 🚀 টেবিল লেখার মেইন স্পিড চাবি
+  framesPerCharacter: 1.2,     // প্রতি ক্যারেক্টার লিখতে ফ্রেম বরাদ্দ (টেবিলে একটু ফাস্ট লেখার জন্য ১.২ দেওয়া হলো)
+  imageVirtualCharacters: 25,  // টেবিলে প্রতিটা ইমেজ বা আইকন ড্র করার জন্য ২৫ ক্যারেক্টারের সমপরিমাণ বাফার টাইম
+};
+
+
+
+// টেবিল বা অন্য যেকোনো ডিপ নেস্টেড এলিমেন্টের ক্যারেক্টার কাউন্ট করার নিখুঁত রিকার্সিভ ফাংশন
 const textLength = (node) => {
+  if (!node) return 0;
   if (typeof node === 'string' || typeof node === 'number') {
     return String(node).length;
   }
-  if (!React.isValidElement(node)) {
-    return 0;
+  
+  if (node.props && node.props.children) {
+    return React.Children.toArray(node.props.children).reduce(
+      (sum, child) => sum + textLength(child),
+      0
+    );
   }
-  return React.Children.toArray(node.props.children).reduce(
-    (total, child) => total + textLength(child),
-    0,
-  );
+  
+  if (Array.isArray(node)) {
+    return node.reduce((sum, child) => sum + textLength(child), 0);
+  }
+
+  // আমাদের নতুন tableAnimationConfig থেকে ইমেজ বাফারিং টাইম রিড করবে
+  if (node.type === 'img' || node.type === 'Image') {
+    return tableAnimationConfig.imageVirtualCharacters; 
+  }
+
+  return 0;
 };
 
 export const getAnimationFrames = (element, fps) => {
-  const props = element?.props || {};
-  const parsedStyle = parseClassNameToStyle(props.className || '');
-  const style = { ...parsedStyle, ...props.style };
+  if (!element) return { animationFrames: fps, progressEnd: 100 };
 
-  // 🎯 ফিক্স: RevealElement এর ভেতরকার কম্পোনেন্ট খুঁজে বের করা
+  const props = element.props || {};
+  
+  // 🎯 মেইন ফিক্স: RevealElement বা অন্য কোনো র্যাপার থাকলে তার ভেতরের আসল কোর চাইল্ডকে এক্সট্র্যাক্ট করা
   let targetElement = element;
-  if (element?.type?.name === 'RevealElement' || props.children?.type?.animationType) {
+  if (props.children && React.isValidElement(props.children)) {
+    targetElement = props.children;
+  } else if (element.type?.name === 'RevealElement') {
     targetElement = props.children;
   }
 
+  const targetProps = targetElement?.props || {};
+  const parsedStyle = parseClassNameToStyle(targetProps.className || '');
+  const style = { ...parsedStyle, ...targetProps.style };
   const animationType = targetElement?.type?.animationType;
 
   let baseFrames;
@@ -89,6 +117,20 @@ export const getAnimationFrames = (element, fps) => {
       speedMultiplier = paragraphAnimationConfig.speedMultiplier;
       break;
 
+    // 📊 টেবিল টাইপের জন্য এখন কাস্টম নোড ট্রাভার্সাল ১০০% কাজ করবে
+    case 'table': {
+      const target = targetElement.type?.getTargetElement 
+        ? targetElement.type.getTargetElement(targetProps) 
+        : targetElement;
+
+      baseFrames = Math.max(
+        fps,
+        Math.ceil(textLength(target) * tableAnimationConfig.framesPerCharacter),
+      );
+      speedMultiplier = tableAnimationConfig.speedMultiplier;
+      break;
+    }
+
     case 'image': 
       baseFrames = Math.round(fps * 3.0);
       speedMultiplier = imageAnimationConfig.speedMultiplier;
@@ -108,11 +150,9 @@ export const getAnimationFrames = (element, fps) => {
     progressEnd: 100 / speedMultiplier,
   };
 };
-
 export const getSequenceDurationInFrames = (children, fps) => {
   const elements = React.Children.toArray(children).filter(React.isValidElement);
   const sequenceIds = [...new Set(elements.map((element) => element.props.sequenceId))].sort((a, b) => a - b);
-
   return sequenceIds.reduce((totalFrames, sequenceId) => {
     const sequenceFrames = elements
       .filter((element) => element.props.sequenceId === sequenceId)
