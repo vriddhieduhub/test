@@ -11,7 +11,7 @@ export const Hr = ({ color, progress, style: inlineStyle, className = '' }) => {
   const style = { ...parsedStyle, ...inlineStyle };
 
   // বাইরে থেকে সিএসএস-এ পাঠানো লেআউট প্রপ্স রিড করা হচ্ছে (ডিফল্ট ফুল উইডথ ৩০০ পিক্সেল)
-  const externalWidth = style?.width ? parseFloat(style.width) : 300;
+  const externalWidth = style?.width === '100%' ? '100%' : (style?.width ? parseFloat(style.width) : 300);
   const externalLeft = style?.left ? parseFloat(style.left) : 0;
   const externalTop = style?.top ? parseFloat(style.top) : 0;
   const lineHeight = style?.height ? parseFloat(style.height) : 6;

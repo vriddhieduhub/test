@@ -133,16 +133,16 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
         style={{
           ...style,
           position: 'absolute',
+          display: 'inline-block',
           top: style?.top || '0px',
           left: style?.left || '0px',
           fontSize: `${fontSize}px`,
           color: color || style?.color || '#000000',
           fontFamily: fontFamily,
           margin: style?.margin || 0,
-          whiteSpace: 'pre-wrap', 
-          wordBreak: 'break-word',
+         
           lineHeight: style?.lineHeight || 1.6,
-          width: style?.width || '1200px', 
+          width: style?.width || '1600px', 
         }}
       >
         {flatChars.map((item, idx) => {

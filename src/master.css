@@ -444,7 +444,33 @@ u {
 .w-1000  { width: 1000px; }
 .w-1100  { width: 1100px; }
 .w-1200  { width: 1200px; }
-.w-1350  { width: 1350px; } /* প্যারাগ্রাফ র‍্যাপার উইডথ */
+.w-1250  { width: 1250px; }
+.w-1300  { width: 1300px; }
+.w-1350  { width: 1350px; }
+.w-1400  { width: 1400px; }
+.w-1450  { width: 1450px; }
+.w-1500  { width: 1500px; }
+.w-1550  { width: 1550px; }
+.w-1600  { width: 1600px; }
+.w-1650  { width: 1650px; }
+.w-1700  { width: 1700px; }
+.w-1750  { width: 1750px; }
+.w-1800  { width: 1800px; }
+.w-1850  { width: 1850px; }
+.w-1900  { width: 1900px; }
+.w-1350  { width: 1350px; }
+.w-1400  { width: 1400px; }
+.w-1450  { width: 1450px; }
+.w-1500  { width: 1500px; }
+.w-1550  { width: 1550px; }
+.w-1600  { width: 1600px; }
+.w-1650  { width: 1650px; }
+.w-1700  { width: 1700px; }
+.w-1750  { width: 1750px; }
+.w-1800  { width: 1800px; }
+.w-1850  { width: 1850px; }
+.w-1900  { width: 1900px; }
+.w-1920  { width: 1920px; }
 
 
 /* --- 🔹 খ) হাইট স্কেলিং ক্লাস (Height Classes) --- */
@@ -491,8 +517,6 @@ u {
 .h-800   { height: 800px; }
 
 /* --------- Most important css ------------- */
-.w-100   { width: 100%; } /* শর্টকাট ১০০% উইডথ */
-.h-100   { height: 100%; } /* শর্টকাট ১০০% হাইট */
 
 /* --- 🖼️ 🔹 OBJECT FIT UTILITIES (ইমেজ ফিটিং ম্যাজিক) --- */
 .object-contain {

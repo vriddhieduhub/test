@@ -135,6 +135,7 @@ export const H1 = ({ children, className = '', color, progress, style: inlineSty
           lineHeight: style?.lineHeight || 1.2,
           zIndex: style?.zIndex || 10,
           clipPath: `inset(0px ${maskRightInset}px 0px 0px)`,
+          width: style?.width === '100%' ? 'auto' : style?.width,
         }}
       >
         {text}

@@ -14,13 +14,13 @@ import {Image} from './components/types/Image';
 // ==========================================
 export const scene01Sequence = [
   <RevealElement key="heading" sequenceId={1}>
-    <H1 className="font-kalam top-80 left-100 text-8xl text-blue w-1350">
+    <H1 className="font-kalam top-80 left-100 text-8xl text-blue w-full">
       Welcome to MCP Thank you
     </H1>
   </RevealElement>,
 
   <RevealElement key="second-heading" sequenceId={2}>
-    <H1 className="font-marker top-180 left-100 text-5xl text-orange w-1350">
+    <H1 className="font-marker top-180 left-100 text-5xl text-orange w-full">
       Different fonts, same animation
     </H1>
   </RevealElement>,
@@ -38,7 +38,7 @@ export const scene01Sequence = [
   </RevealElement>,
 
   <RevealElement key="paragraph" sequenceId={5}>
-    <P className="font-kalam top-350 left-100 text-4xl w-1350 leading-relaxed w-1350">
+    <P className="font-kalam top-350 left-100 text-4xl w-1600 leading-relaxed">
       <strong>MCP (Model Context Protocol)</strong> is a{' '}
       <span className="text-red">new standard</span>{' '}
       that enables AI models to{' '}
