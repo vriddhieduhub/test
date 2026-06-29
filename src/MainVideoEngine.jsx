@@ -38,7 +38,7 @@ export const scene01Sequence = [
   </RevealElement>,
 
   <RevealElement key="paragraph" sequenceId={5}>
-    <P className="font-kalam top-350 left-100 text-4xl w-1600 leading-relaxed">
+    <P className="font-kalam top-350 left-700 text-4xl w-1100 leading-relaxed">
       <strong>MCP (Model Context Protocol)</strong> is a{' '}
       <span className="text-red">new standard</span>{' '}
       that enables AI models to{' '}
@@ -75,7 +75,7 @@ export const scene02Sequence = [
   </RevealElement>,
 
   <RevealElement key="scene2-description" sequenceId={3}>
-    <P className="font-kalam top-700 left-100 text-3xl w-1350 leading-relaxed text-gray-700">
+    <P className="font-kalam top-700 left-700 text-3xl w-1100 leading-relaxed text-gray-700">
       Explore the powerful capabilities and integrations available in the MCP ecosystem.
     </P>
   </RevealElement>,
