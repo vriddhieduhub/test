@@ -80,7 +80,7 @@ export const DynamicArrow = ({
       {/* হাত দিয়ে ড্র করার অ্যানিমেশন */}
       {isWritingActive && (
         <Img
-          src={staticFile("/finaHandImg.png")}
+          src={staticFile("/images/hand/finaHandImg.png")}
           alt="Hand drawing dynamic arrow"
           style={{
             position: 'absolute',

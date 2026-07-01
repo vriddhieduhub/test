@@ -6,7 +6,9 @@ src/
 ├── components/
 │   ├── RevealElement.jsx
 │   └── types/
+│       ├── ArrowWithText.jsx
 │       ├── CodingBlock.jsx
+│       ├── DynamicArrow.jsx
 │       ├── H1.jsx
 │       ├── Hr.jsx
 │       ├── Image.jsx
@@ -109,6 +111,155 @@ export const RevealElement = ({
 };
 
 ###########################################
+src\components\types\ArrowWithText.jsx
+###########################################
+import React, { useRef, useState, useLayoutEffect } from 'react';
+import { useCurrentFrame, Img, staticFile, interpolate } from 'remotion';
+import { parseClassNameToStyle } from '../../utils/styleResolver';
+
+export const ArrowWithText = ({ 
+  startX, 
+  startY, 
+  endX, 
+  endY, 
+  text, 
+  textPosition = 'top', // 'top' অথবা 'bottom'
+  progress, 
+  className = '', 
+  color = '#000000', 
+  thickness = 4,
+  style: inlineStyle
+}) => {
+  const frame = useCurrentFrame();
+  const pathRef = useRef(null);
+  const [totalLength, setTotalLength] = useState(0);
+
+  const parsedStyle = parseClassNameToStyle(className);
+
+  useLayoutEffect(() => {
+    if (pathRef.current) {
+      setTotalLength(pathRef.current.getTotalLength());
+    }
+  }, []);
+
+  const pathData = `M ${startX} ${startY} L ${endX} ${endY}`;
+
+  // ⏱️ প্রগ্রেস বন্টন: প্রথম ৫০% সময়ে তীর আঁকা হবে, পরের ৫০% সময়ে টেক্সট লেখা হবে
+  const arrowProgress = interpolate(progress, [0, 50], [0, 100], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+
+  const textProgress = interpolate(progress, [50, 100], [0, 100], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+
+  // তীরের কালি রিভিল লজিক
+  const strokeDashoffset = totalLength - (arrowProgress / 100) * totalLength;
+
+  // তীরের এঙ্গেল ক্যালকুলেশন (Arrow Head এর জন্য)
+  const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
+
+  // টেক্সট ক্যারেক্টার হ্যান্ডলিং
+  const chars = text.split("");
+  const charsToShow = Math.floor((textProgress / 100) * chars.length);
+
+  // ✒️ পেনের নিব ট্র্যাকিং (হাত কোথায় থাকবে)
+  let handX = startX;
+  let handY = startY;
+  const isWritingActive = progress > 0 && progress < 100;
+
+  if (progress <= 50) {
+    // তীর আঁকার সময় পেনের পজিশন
+    if (pathRef.current && totalLength > 0) {
+      const currentPoint = (arrowProgress / 100) * totalLength;
+      const point = pathRef.current.getPointAtLength(currentPoint);
+      handX = point.x;
+      handY = point.y;
+    }
+  } else {
+    // টেক্সট লেখার সময় পেনের পজিশন (লিনিয়ার ব্যাকআপ মুভমেন্ট)
+    const textWidthEstimate = chars.length * 16; 
+    const textStartX = startX + (endX - startX) / 2 - textWidthEstimate / 2;
+    handX = textStartX + (textProgress / 100) * textWidthEstimate;
+    handY = textPosition === 'top' ? startY - 40 : startY + 40;
+  }
+
+  // টেক্সটের পজিশন ঠিক করা (তীরের ওপরে না নিচে)
+  const textTopPos = textPosition === 'top' ? startY - 70 : startY + 20;
+  const textLeftPos = startX + (endX - startX) / 2;
+
+  return (
+    <>
+      {/* 🏹 SVG Arrow Part */}
+      <svg style={{ position: 'absolute', top: 0, left: 0, width: '1920px', height: '1080px', pointerEvents: 'none', zIndex: 8 }}>
+        <path
+          ref={pathRef}
+          d={pathData}
+          fill="none"
+          stroke={color}
+          strokeWidth={thickness}
+          strokeDasharray={totalLength}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+        />
+        {arrowProgress === 100 && (
+          <polygon
+            points={`${endX},${endY} ${endX - 15},${endY - 7} ${endX - 15},${endY + 7}`}
+            fill={color}
+            transform={`rotate(${angle}, ${endX}, ${endY})`}
+          />
+        )}
+      </svg>
+
+      {/* 📝 Text Part (Kalam হরফে রিয়েল হ্যান্ডরাইটিং লুক) */}
+      {progress > 50 && (
+        <div
+            className={className} // 👈 যাতে বাইরে থেকে পাঠানো text-3xl বা text-2xl ক্লাস কাজ করে
+            style={{
+                ...parsedStyle, // 👈 master.css এর ফন্ট সাইজ স্টাইল ইমপোর্ট করার জন্য
+                ...inlineStyle,
+                position: 'absolute',
+                top: `${textTopPos}px`,
+                left: `${textLeftPos}px`,
+                transform: 'translateX(-50%)',
+                color: color || parsedStyle?.color || '#000000',
+                whiteSpace: 'nowrap',
+                zIndex: 9,
+                textAlign: 'center'
+            }}
+            >
+          {chars.map((char, idx) => (
+            <span key={idx} style={{ opacity: idx < charsToShow ? 1 : 0 }}>
+              {char}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* ✒️ অ্যানিমেশন রাইটিং হ্যান্ড */}
+      {isWritingActive && (
+        <Img
+          src={staticFile("/images/hand/finaHandImg.png")}
+          alt="Hand drawing arrow with text"
+          style={{
+            position: 'absolute',
+            left: `${handX - 25}px`,
+            top: `${handY - 15}px`,
+            width: '180px',
+            zIndex: 100,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+    </>
+  );
+};
+
+ArrowWithText.animationType = 'paragraph'; // existing duration architecture এ খাপ খাওয়ানোর জন্য
+
+###########################################
 src\components\types\CodingBlock.jsx
 ###########################################
 import React from 'react';
@@ -124,6 +275,109 @@ export const CodingBlock = ({ code, progress }) => {
     </div>
   );
 };
+
+###########################################
+src\components\types\DynamicArrow.jsx
+###########################################
+// src/components/types/DynamicArrow.jsx
+import React, { useRef, useState, useLayoutEffect } from 'react';
+import { useCurrentFrame, Img, staticFile, interpolate } from 'remotion';
+
+export const DynamicArrow = ({ 
+  startX, 
+  startY, 
+  endX, 
+  endY, 
+  controlX, // যদি বাঁকা (Curved) তীর বানাতে চাও, তবে এটি লাগবে (ঐচ্ছিক)
+  controlY, 
+  progress, 
+  color = '#1d4ed8', 
+  thickness = 4 
+}) => {
+  const frame = useCurrentFrame();
+  const pathRef = useRef(null);
+  const [totalLength, setTotalLength] = useState(0);
+
+  // SVG Path এর টোটাল পিক্সেল লেন্থ বের করার জন্য
+  useLayoutEffect(() => {
+    if (pathRef.current) {
+      setTotalLength(pathRef.current.getTotalLength());
+    }
+  }, []);
+
+  // যদি control point থাকে তবে কার্ভ (Bezier) লাইন হবে, নাহলে সোজা কোণাকুণি লাইন
+  const pathData = controlX && controlY 
+    ? `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`
+    : `M ${startX} ${startY} L ${endX} ${endY}`;
+
+  // প্রগ্রেস অনুযায়ী লাইনের কালি কতটা রিভিল হবে
+  const strokeDashoffset = totalLength - (progress / 100) * totalLength;
+
+  // রিয়েল-টাইম পেনের নিবের পজিশন ক্যালকুলেট করা (হাতের জন্য)
+  let handX = startX;
+  let handY = startY;
+
+  if (pathRef.current && totalLength > 0) {
+    const currentPointIndex = (progress / 100) * totalLength;
+    const point = pathRef.current.getPointAtLength(currentPointIndex);
+    handX = point.x;
+    handY = point.y;
+  }
+
+  // পেনের নিবের ইউনিভার্সাল অফসেট
+  const writeOffsetX = -25;
+  const writeOffsetY = -10;
+
+  const isWritingActive = progress > 0 && progress < 100;
+
+  // তীরের মাথার (Arrow Head) কোণ বা অ্যাঙ্গেল ক্যালকুলেট করা (যাতে তীরটি যেদিকে যাচ্ছে সেদিকেই ঘুরে থাকে)
+  const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
+
+  return (
+    <>
+      <svg style={{ position: 'absolute', top: 0, left: 0, width: '1920px', height: '1080px', pointerEvents: 'none', zIndex: 8 }}>
+        {/* মূল অ্যানিমেটেড রেখা */}
+        <path
+          ref={pathRef}
+          d={pathData}
+          fill="none"
+          stroke={color}
+          strokeWidth={thickness}
+          strokeDasharray={totalLength}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+        />
+
+        {/* তীরের মাথা (অ্যানিমেশন ১০০% শেষ হলে নিখুঁত অ্যাঙ্গেলে ভেসে উঠবে) */}
+        {progress === 100 && (
+          <polygon
+            points={`${endX},${endY} ${endX - 15},${endY - 8} ${endX - 15},${endY + 8}`}
+            fill={color}
+            transform={`rotate(${angle}, ${endX}, ${endY})`}
+          />
+        )}
+      </svg>
+
+      {/* হাত দিয়ে ড্র করার অ্যানিমেশন */}
+      {isWritingActive && (
+        <Img
+          src={staticFile("/images/hand/finaHandImg.png")}
+          alt="Hand drawing dynamic arrow"
+          style={{
+            position: 'absolute',
+            left: `${handX + writeOffsetX}px`,
+            top: `${handY + writeOffsetY}px`,
+            width: '180px',
+            zIndex: 100,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+    </>
+  );
+};
+
+DynamicArrow.animationType = 'underline'; // তোমার ইঞ্জিনের কনফিগ চাবি
 
 ###########################################
 src\components\types\H1.jsx
@@ -289,7 +543,7 @@ export const H1 = ({ children, className = '', color, progress, style: inlineSty
 
       {isWritingActive && charPositions.length === totalChars && (
         <Img
-          src={staticFile("/finaHandImg.png")}
+          src={staticFile("/images/hand/finaHandImg.png")}
           alt="Hand with pen"
           style={{
             position: 'absolute',
@@ -396,7 +650,7 @@ export const Hr = ({ color, progress, style: inlineStyle, className = '' }) => {
       {/* ২. ডেডিকেটেড হাত এলিমেন্ট: লাইন শেষ হওয়া মাত্রই ক্লিয়ার উধাও হয়ে যাবে */}
       {isWritingActive && (
         <Img
-          src={staticFile("/finaHandImg.png")}
+          src={staticFile("/images/hand/finaHandImg.png")}
           alt="Hand with pen"
           style={{
             position: 'absolute',
@@ -493,7 +747,7 @@ export const Image = ({ src, alt = "Whiteboard Image", progress, className = '',
 
       {isWritingActive && (
         <Img
-          src={staticFile("/finalHandImgArt.png")}
+          src={staticFile("/images/hand/finalHandImgArt.png")}
           alt="Hand drawing image"
           style={{
             position: 'absolute',
@@ -704,7 +958,7 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
       {/* ২. হাত এলিমেন্ট */}
       {isWritingActive && charPositions.length === totalChars && (
         <Img
-          src={staticFile("/finaHandImg.png")}
+          src={staticFile("/images/hand/finaHandImg.png")}
           alt="Hand with pen"
           style={{
             position: 'absolute',
@@ -1005,7 +1259,7 @@ export const Td = ({ children, cellIndex, className = '', style: cellInlineStyle
       {/* ✒️ পিউর সিঙ্কড রাইটিং হ্যান্ড */}
       {isCellWriting && (
         <Img
-          src={staticFile("/finaHandImg.png")}
+          src={staticFile("/images/hand/finaHandImg.png")}
           alt="Hand writing cell"
           style={{
             position: 'absolute',
@@ -1166,7 +1420,7 @@ export const WhiteboardEraser = ({
       {/* ২. ঘষতে থাকা হাতের এলিমেন্ট */}
       {isWritingActive && (
         <Img
-          src={staticFile('/finalHandEraser.png')}
+          src={staticFile('/images/hand/finalHandEraser.png')}
           alt="Rubber hand erasing"
           style={{
             position: 'absolute',
@@ -1314,6 +1568,175 @@ import { Hr } from './components/types/Hr';
 import { P } from './components/types/P';
 import { Image } from './components/types/Image';
 import { Table, Tr, Th, Td } from './components/types/Table'; // নতুন তৈরি করা টেবিল কম্পোনেন্ট
+// ==========================================================================
+// 🚀 NEW SCENE: MCP BASIC FLOW (User -> AI App -> MCP Server -> Tools)
+// ==========================================================================
+import { ArrowWithText } from './components/types/ArrowWithText';
+import { DynamicArrow } from './components/types/DynamicArrow';
+
+
+
+export const mcpBasicFlowSequence = [
+  // --------------------------------------------------
+  // 0. MAIN TITLE
+  // --------------------------------------------------
+  <RevealElement key="mcp-flow-title" sequenceId={1}>
+    <H1 className="font-kalam top-60 left-100 text-6xl text-black font-bold w-full">
+      MCP (Model Context Protocol) - Basic Flow
+    </H1>
+  </RevealElement>,
+
+  // --------------------------------------------------
+  // 1. BLOCK 01: USER NODE
+  // --------------------------------------------------
+  <RevealElement key="block-01-user" sequenceId={2}>
+    <Image 
+      src="/diagram/images/diagram/01.PNG" 
+      alt="1. USER"
+      className="top-220 left-40 w-280 h-600 object-contain" 
+    />
+  </RevealElement>,
+
+  // --------------------------------------------------
+  // 2. FLOW BETWEEN USER & AI APP (Arrow + Text)
+  // --------------------------------------------------
+  // Top Arrow: Question / Request (User -> AI App)
+  <RevealElement key="flow-user-to-ai" sequenceId={3}>
+    <ArrowWithText 
+      startX={345} 
+      startY={400} 
+      endX={475} 
+      endY={400} 
+      text="Question / Request" 
+      textPosition="top" 
+      color="#000000"
+      className="font-kalam text-2xl text-black"
+      thickness={4}
+    />
+  </RevealElement>,
+
+  // Bottom Arrow: Response / Answer (AI App -> User)
+  <RevealElement key="flow-ai-to-user" sequenceId={4}>
+    <ArrowWithText 
+      startX={475} 
+      startY={580} 
+      endX={345} 
+      endY={580} 
+      text="Response / Answer" 
+      textPosition="bottom" 
+      color="#000000"
+      thickness={4}
+      className="font-kalam text-2xl text-black"
+    />
+  </RevealElement>,
+
+  // --------------------------------------------------
+  // 3. BLOCK 02: AI APPLICATION NODE
+  // --------------------------------------------------
+  <RevealElement key="block-02-ai-app" sequenceId={5}>
+    <Image 
+      src="/diagram/images/diagram/02.PNG" 
+      alt="2. AI APPLICATION"
+      className="top-180 left-495 w-320 h-730 object-contain" 
+    />
+  </RevealElement>,
+
+  // --------------------------------------------------
+  // 4. FLOW BETWEEN AI APP & MCP SERVER (Arrow + Sub-text)
+  // --------------------------------------------------
+  // Top Flow: 3. MCP Request & Sub-text
+  <RevealElement key="flow-ai-to-server" sequenceId={6}>
+    <ArrowWithText 
+      startX={835} 
+      startY={380} 
+      endX={1085} 
+      endY={380} 
+      text="3. MCP Request" 
+      textPosition="top" 
+      color="#7e22ce" // Purple color matching image theme
+      className="font-kalam text-3xl text-purple"
+      thickness={4}
+    />
+  </RevealElement>,
+  <RevealElement key="label-mcp-request-sub" sequenceId={7}>
+   <P className="font-kalam top-460 left-960 text-2xl w-400 text-center text-gray" style={{ transform: 'translateX(-50%)' }}>
+    (Discover / List / Call Tool)
+  </P>
+  </RevealElement>,
+
+  // Bottom Flow: 4. MCP Response & Sub-text
+  <RevealElement key="flow-server-to-ai" sequenceId={8}>
+    <ArrowWithText 
+      startX={1085} 
+      startY={630} 
+      endX={835} 
+      endY={630} 
+      text="4. MCP Response" 
+      textPosition="bottom" 
+      color="#7e22ce"
+      className="font-kalam text-3xl text-purple"
+      thickness={4}
+    />
+  </RevealElement>,
+  <RevealElement key="label-mcp-response-sub" sequenceId={9}>
+    <P className="font-kalam top-690 left-960 text-2xl w-400 text-center" style={{ transform: 'translateX(-50%)' }}>
+      (Result / Data)
+    </P>
+  </RevealElement>,
+
+  // --------------------------------------------------
+  // 5. BLOCK 03: MCP SERVER NODE
+  // --------------------------------------------------
+  <RevealElement key="block-03-mcp-server" sequenceId={10}>
+    <Image 
+      src="/diagram/images/diagram/03.PNG" 
+      alt="3. MCP SERVER"
+      className="top-200 left-1100 w-340 h-700 object-contain" 
+    />
+  </RevealElement>,
+
+  // --------------------------------------------------
+  // 6. BLOCK 04: EXTERNAL TOOLS / DATA SOURCES
+  // --------------------------------------------------
+  <RevealElement key="block-04-external-tools" sequenceId={11}>
+    <Image 
+      src="/diagram/images/diagram/04.PNG" 
+      alt="4. EXTERNAL TOOLS"
+      className="top-170 left-1520 w-320 h-800 object-contain" 
+    />
+  </RevealElement>,
+
+  // --------------------------------------------------
+  // 7. MULTIPLE TWO-WAY CONNECTORS TO SUB-TOOLS
+  // --------------------------------------------------
+  // Connectors dynamically drawn to five stacked tools (Database, Web API, etc.)
+  <RevealElement key="arrow-tool-1" sequenceId={12}>
+    <DynamicArrow startX={1455} startY={285} endX={1510} endY={285} color="#000000" thickness={3} />
+  </RevealElement>,
+  <RevealElement key="arrow-tool-2" sequenceId={13}>
+    <DynamicArrow startX={1455} startY={445} endX={1510} endY={445} color="#000000" thickness={3} />
+  </RevealElement>,
+  <RevealElement key="arrow-tool-3" sequenceId={14}>
+    <DynamicArrow startX={1455} startY={605} endX={1510} endY={605} color="#000000" thickness={3} />
+  </RevealElement>,
+  <RevealElement key="arrow-tool-4" sequenceId={15}>
+    <DynamicArrow startX={1455} startY={765} endX={1510} endY={765} color="#000000" thickness={3} />
+  </RevealElement>,
+  <RevealElement key="arrow-tool-5" sequenceId={16}>
+    <DynamicArrow startX={1455} startY={915} endX={1510} endY={915} color="#000000" thickness={3} />
+  </RevealElement>,
+
+  // --------------------------------------------------
+  // 8. ERASER CLEANUP FOR NEXT SCENE
+  // --------------------------------------------------
+  <RevealElement key="eraser-mcp-flow" sequenceId={17}>
+    <WhiteboardEraser />
+  </RevealElement>,
+];
+
+
+
+
 
 // ==========================================
 // SCENE 01: মূল সিন - হেডিং, প্যারাগ্রাফ, ইমেজ ইত্যাদি
@@ -1337,7 +1760,7 @@ export const scene01Sequence = [
 
   <RevealElement key="mcp-hub-image" sequenceId={4}>
     <Image 
-      src="/mcpimg.png" 
+      src="/images/mcpimg.png" 
       alt="MCP Hub Diagram"
       className="top-250 left-100 w-380 h-380 object-contain" 
     />
@@ -1374,7 +1797,7 @@ export const scene02Sequence = [
 
   <RevealElement key="scene2-image" sequenceId={2}>
     <Image 
-      src="/mcpclients.png" 
+      src="/images/mcpclients.png" 
       alt="Advanced Features"
       className="top-300 left-100 w-500 h-500 object-contain w-1350" 
     />
@@ -1414,7 +1837,7 @@ export const scene04Sequence = [
         {/* ROW 1: Role */}
         <Tr className="border-bottom-2">
           <Td cellIndex={3} className="font-bold border-right-2">
-            <img src="/topicSymbolRole.png" width="120px" alt="Role" /> Role
+            <img src="/images/topicSymbolRole.png" width="120px" alt="Role" /> Role
           </Td>
           <Td cellIndex={4} className="font-bold text-4xl text-blue border-right-2">
             Protocol / Standard
@@ -1426,7 +1849,7 @@ export const scene04Sequence = [
         {/* ROW 2: Purpose */}
         <Tr className="border-bottom-2">
           <Td cellIndex={6} className="font-bold text-4xl border-right-2">
-            <img src="/topicSymbolPurpose.png" width="120px" alt="Purpose" /> Purpose
+            <img src="/images/topicSymbolPurpose.png" width="120px" alt="Purpose" /> Purpose
           </Td>
           <Td cellIndex={7} className="text-black text-4xl border-right-2">
             Connect AI models with external tools and data sources
@@ -1490,6 +1913,15 @@ const Scene03Container = () => (
 );
 
 // ==========================================
+// SCENE 05: নতুন ফ্লো ডায়াগ্রাম সিন কন্টেইনার
+// ==========================================
+const Scene05Container = () => (
+  <AbsoluteFill id="scene-05">
+    <RevealSequence>{mcpBasicFlowSequence}</RevealSequence>
+  </AbsoluteFill>
+);
+
+// ==========================================
 // 🚀 MAIN ENGINE COMPONENT
 // ==========================================
 export const MainVideoEngine = () => {
@@ -1500,6 +1932,8 @@ export const MainVideoEngine = () => {
   const scene02Duration = getSequenceDurationInFrames(scene02Sequence, FPS);
   const scene04Duration = getSequenceDurationInFrames(scene04Sequence, FPS);
   const scene03Duration = getSequenceDurationInFrames(scene03Sequence, FPS);
+  const scene05Duration = getSequenceDurationInFrames(mcpBasicFlowSequence, FPS);
+
 
   // গ্লোবাল টাইমলাইন ফ্রেম ট্র্যাকিং
   let currentFrame = 0;
@@ -1513,6 +1947,9 @@ export const MainVideoEngine = () => {
   // টেবিল সিনটিকে ৩ নম্বর সিনের (Thank you) আগে প্লেস করা হলো লজিক্যালি
   const scene04StartFrame = currentFrame;
   currentFrame += scene04Duration;
+
+  const scene05StartFrame = currentFrame;
+  currentFrame += scene05Duration;
   
   const scene03StartFrame = currentFrame;
 
@@ -1532,6 +1969,11 @@ export const MainVideoEngine = () => {
       {/* SCENE 04 (Table Comparison) */}
       <Sequence from={scene04StartFrame} durationInFrames={scene04Duration}>
         <Scene04Container />
+      </Sequence>
+
+      {/* 🔥 SCENE 05 (New Flow Diagram Scene) */}
+      <Sequence from={scene05StartFrame} durationInFrames={scene05Duration}>
+        <Scene05Container />
       </Sequence>
 
       {/* SCENE 03 (Thank You Slide) */}
@@ -2191,7 +2633,8 @@ src\Root.jsx
 ###########################################
 import React from 'react';
 import { Composition } from 'remotion';
-import { MainVideoEngine, scene01Sequence, scene02Sequence, scene03Sequence, scene04Sequence } from './MainVideoEngine';
+import { MainVideoEngine, scene01Sequence, scene02Sequence, scene03Sequence,
+   scene04Sequence, mcpBasicFlowSequence } from './MainVideoEngine';
 import { getSequenceDurationInFrames } from './whiteboard.config';
 
 const FPS = 30;
@@ -2203,13 +2646,16 @@ export const RemotionRoot = () => {
   const scene02Duration = getSequenceDurationInFrames(scene02Sequence, FPS);
   const scene03Duration = getSequenceDurationInFrames(scene03Sequence, FPS);
   const scene04Duration = getSequenceDurationInFrames(scene04Sequence, FPS);
-  
+  const scene05Duration = getSequenceDurationInFrames(mcpBasicFlowSequence, FPS);
+
+
   // মোট ডিউরেশন = Scene01 + Scene02 + Scene03 + End Hold
   const totalDuration = 
     scene01Duration + 
     scene02Duration + 
     scene03Duration + 
     scene04Duration +
+    scene05Duration +
     END_HOLD_IN_FRAMES;
 
   return (
@@ -2826,6 +3272,12 @@ export const getAnimationFrames = (element, fps) => {
     case 'eraser':
       baseFrames = Math.round(fps * 3.0);
       speedMultiplier = eraserAnimationConfig.speedMultiplier;
+      break;
+
+    case 'arrowWithText':
+      // তীর + টেক্সটের ক্যারেক্টার মিলিয়ে ফ্রেম বন্টন
+      baseFrames = Math.max(fps * 2.5, textLength(targetElement) * 5);
+      speedMultiplier = paragraphAnimationConfig.speedMultiplier;
       break;
 
     default:

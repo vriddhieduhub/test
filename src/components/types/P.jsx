@@ -165,7 +165,7 @@ export const P = ({ children, progress, style: inlineStyle, className = '', colo
       {/* ২. হাত এলিমেন্ট */}
       {isWritingActive && charPositions.length === totalChars && (
         <Img
-          src={staticFile("/finaHandImg.png")}
+          src={staticFile("/images/hand/finaHandImg.png")}
           alt="Hand with pen"
           style={{
             position: 'absolute',

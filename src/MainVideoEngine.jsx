@@ -32,7 +32,7 @@ export const mcpBasicFlowSequence = [
   // --------------------------------------------------
   <RevealElement key="block-01-user" sequenceId={2}>
     <Image 
-      src="/diagram/01.PNG" 
+      src="/diagram/images/diagram/01.PNG" 
       alt="1. USER"
       className="top-220 left-40 w-280 h-600 object-contain" 
     />
@@ -76,7 +76,7 @@ export const mcpBasicFlowSequence = [
   // --------------------------------------------------
   <RevealElement key="block-02-ai-app" sequenceId={5}>
     <Image 
-      src="/diagram/02.PNG" 
+      src="/diagram/images/diagram/02.PNG" 
       alt="2. AI APPLICATION"
       className="top-180 left-495 w-320 h-730 object-contain" 
     />
@@ -130,7 +130,7 @@ export const mcpBasicFlowSequence = [
   // --------------------------------------------------
   <RevealElement key="block-03-mcp-server" sequenceId={10}>
     <Image 
-      src="/diagram/03.PNG" 
+      src="/diagram/images/diagram/03.PNG" 
       alt="3. MCP SERVER"
       className="top-200 left-1100 w-340 h-700 object-contain" 
     />
@@ -141,7 +141,7 @@ export const mcpBasicFlowSequence = [
   // --------------------------------------------------
   <RevealElement key="block-04-external-tools" sequenceId={11}>
     <Image 
-      src="/diagram/04.PNG" 
+      src="/diagram/images/diagram/04.PNG" 
       alt="4. EXTERNAL TOOLS"
       className="top-170 left-1520 w-320 h-800 object-contain" 
     />
@@ -201,7 +201,7 @@ export const scene01Sequence = [
 
   <RevealElement key="mcp-hub-image" sequenceId={4}>
     <Image 
-      src="/mcpimg.png" 
+      src="/images/mcpimg.png" 
       alt="MCP Hub Diagram"
       className="top-250 left-100 w-380 h-380 object-contain" 
     />
@@ -238,7 +238,7 @@ export const scene02Sequence = [
 
   <RevealElement key="scene2-image" sequenceId={2}>
     <Image 
-      src="/mcpclients.png" 
+      src="/images/mcpclients.png" 
       alt="Advanced Features"
       className="top-300 left-100 w-500 h-500 object-contain w-1350" 
     />
@@ -278,7 +278,7 @@ export const scene04Sequence = [
         {/* ROW 1: Role */}
         <Tr className="border-bottom-2">
           <Td cellIndex={3} className="font-bold border-right-2">
-            <img src="/topicSymbolRole.png" width="120px" alt="Role" /> Role
+            <img src="/images/topicSymbolRole.png" width="120px" alt="Role" /> Role
           </Td>
           <Td cellIndex={4} className="font-bold text-4xl text-blue border-right-2">
             Protocol / Standard
@@ -290,7 +290,7 @@ export const scene04Sequence = [
         {/* ROW 2: Purpose */}
         <Tr className="border-bottom-2">
           <Td cellIndex={6} className="font-bold text-4xl border-right-2">
-            <img src="/topicSymbolPurpose.png" width="120px" alt="Purpose" /> Purpose
+            <img src="/images/topicSymbolPurpose.png" width="120px" alt="Purpose" /> Purpose
           </Td>
           <Td cellIndex={7} className="text-black text-4xl border-right-2">
             Connect AI models with external tools and data sources

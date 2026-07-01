@@ -242,7 +242,7 @@ export const Td = ({ children, cellIndex, className = '', style: cellInlineStyle
       {/* ✒️ পিউর সিঙ্কড রাইটিং হ্যান্ড */}
       {isCellWriting && (
         <Img
-          src={staticFile("/finaHandImg.png")}
+          src={staticFile("/images/hand/finaHandImg.png")}
           alt="Hand writing cell"
           style={{
             position: 'absolute',

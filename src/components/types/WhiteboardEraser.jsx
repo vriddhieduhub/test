@@ -95,7 +95,7 @@ export const WhiteboardEraser = ({
       {/* ২. ঘষতে থাকা হাতের এলিমেন্ট */}
       {isWritingActive && (
         <Img
-          src={staticFile('/finalHandEraser.png')}
+          src={staticFile('/images/hand/finalHandEraser.png')}
           alt="Rubber hand erasing"
           style={{
             position: 'absolute',

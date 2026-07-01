@@ -126,7 +126,7 @@ export const ArrowWithText = ({
       {/* ✒️ অ্যানিমেশন রাইটিং হ্যান্ড */}
       {isWritingActive && (
         <Img
-          src={staticFile("/finaHandImg.png")}
+          src={staticFile("/images/hand/finaHandImg.png")}
           alt="Hand drawing arrow with text"
           style={{
             position: 'absolute',

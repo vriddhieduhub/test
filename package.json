@@ -24,9 +24,12 @@
     "build": "remotion bundle",
     "upgrade": "remotion upgrade",
     "lint": "eslint src",
-    "snapshot": "npx ts-node tools/generate-snapshot.ts"
+    "snapshot": "npx ts-node tools/generate-snapshot.ts",
+    "export": "remotion render src/index.js WhiteboardEngine"  
+    
   },
   "sideEffects": [
     "*.css"
   ]
 }
+

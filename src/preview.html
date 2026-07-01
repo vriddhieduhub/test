@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Whiteboard Engine Preview</title>
+  
+  <link rel="stylesheet" href="master.css">
+
+  <link rel="stylesheet" href="preview-layout.css">
+</head>
+<body>
+
+  <div id="scene-01" class="scene-container" data-scene-id="1">
+    <div class="scene-title-tag">Scene 1: Intro</div>
+    
+    <h1 data-sequence-id="1" class="absolute font-kalam top-80 left-100 text-8xl text-blue w-full">Welcome to MCP Thank you</h1>
+    <h1 data-sequence-id="2" class="absolute font-marker top-180 left-100 text-5xl text-orange w-full">Different fonts, same animation</h1>
+    <div data-sequence-id="3" class="absolute top-250 left-100 w-1200 h-10 bg-green w-1350 rounded"></div>
+    <img data-sequence-id="4" src="/images/mcpimg.png" alt="MCP Hub Diagram" class="absolute top-250 left-100 w-380 h-380 object-contain" />
+    <p data-sequence-id="5" class="absolute font-kalam top-350 left-700 text-4xl w-1100 leading-relaxed">
+      <strong>MCP (Model Context Protocol)</strong> is a <span class="text-red">new standard</span> that enables AI models to <span class="bg-yellow rounded px-2">communicate with external tools</span> in a <span class="underline-green">secure and structured way</span>. It eliminates <span class="text-blue font-bold">custom integrations</span>, improves <span class="text-emerald italic">developer productivity</span>, and makes AI agents <span class="bg-purple rounded px-2"><strong class="font-bold">more reliable</strong></span> for <span class="underline-thick-red">real-world applications</span>.
+    </p>
+    <div data-sequence-id="6" data-type="eraser"></div>
+  </div>
+
+  <div id="scene-02" class="scene-container" data-scene-id="2">
+    <div class="scene-title-tag">Scene 2: Advanced Features</div>
+    
+    <h1 data-sequence-id="1" class="absolute font-kalam top-100 left-100 text-7xl text-purple w-1350">Scene 02: Advanced Features</h1>
+    <img data-sequence-id="2" src="/images/mcpclients.png" alt="Advanced Features" class="absolute top-300 left-100 w-500 h-500 object-contain w-1350" />
+    <p data-sequence-id="3" class="absolute font-kalam top-700 left-700 text-3xl w-1100 leading-relaxed text-gray">
+      Explore the powerful capabilities and integrations available in the MCP ecosystem.
+    </p>
+    <div data-sequence-id="4" data-type="eraser"></div>
+  </div>
+
+  <div id="scene-04" class="scene-container" data-scene-id="4">
+    <div class="scene-title-tag">Scene 3: Comparison Table</div>
+    
+    <h1 data-sequence-id="1" class="absolute font-kalam top-80 left-100 text-6xl text-black font-bold w-full">Comparison: MCP vs LangGraph</h1>
+    
+    <div data-sequence-id="2" class="absolute top-220 left-100 w-1700 font-kalam">
+      <table>
+        <thead>
+          <tr class="bg-gray-100 border-bottom-3">
+            <th class="border-right-2" style="width: 25%;">Aspect</th>
+            <th class="text-blue border-right-2" style="width: 37.5%;">MCP</th>
+            <th class="text-green" style="width: 37.5%;">LangGraph</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-bottom-2">
+            <td class="font-bold border-right-2" style="width: 25%;">
+              <img src="/images/topicSymbolRole.png" style="width: 120px; vertical-align: middle; margin-right: 12px;" alt="" />Role
+            </td>
+            <td class="font-bold text-4xl text-blue border-right-2" style="width: 37.5%;">Protocol / Standard</td>
+            <td class="font-bold text-4xl text-emerald" style="width: 37.5%;">Framework / Library</td>
+          </tr>
+          <tr class="border-bottom-2">
+            <td class="font-bold text-4xl border-right-2" style="width: 25%;">
+              <img src="/images/topicSymbolPurpose.png" style="width: 120px; vertical-align: middle; margin-right: 12px;" alt="" />Purpose
+            </td>
+            <td class="text-black text-4xl border-right-2" style="width: 37.5%;">Connect AI models with external tools and data sources</td>
+            <td class="text-black text-4xl" style="width: 37.5%;">Build stateful, multistep agent workflows</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div data-sequence-id="3" data-type="eraser"></div>
+  </div>
+
+  <div id="scene-05" class="scene-container" data-scene-id="5">
+    <div class="scene-title-tag">Scene 4: Basic Flow Diagram</div>
+    
+    <h1 data-sequence-id="1" class="absolute font-kalam top-60 left-100 text-6xl text-black font-bold w-full">MCP (Model Context Protocol) - Basic Flow</h1>
+    
+    <img data-sequence-id="2" src="/diagram/images/diagram/01.PNG" alt="1. USER" class="absolute top-220 left-40 w-280 h-600 object-contain" />
+    
+    <svg class="arrow-svg" data-sequence-id="3">
+      <path d="M 345 400 L 475 400" fill="none" stroke="#000000" stroke-width="4" />
+      <polygon points="475,400 460,393 460,407" fill="#000000" />
+    </svg>
+    <div data-sequence-id="3" class="arrow-text font-kalam text-2xl text-black" style="top: 350px; left: 410px;">Question / Request</div>
+
+    <svg class="arrow-svg" data-sequence-id="4">
+      <path d="M 475 580 L 345 580" fill="none" stroke="#000000" stroke-width="4" />
+      <polygon points="345,580 360,573 360,587" fill="#000000" />
+    </svg>
+    <div data-sequence-id="4" class="arrow-text font-kalam text-2xl text-black" style="top: 600px; left: 410px;">Response / Answer</div>
+
+    <img data-sequence-id="5" src="/diagram/images/diagram/02.PNG" alt="2. AI APPLICATION" class="absolute top-180 left-495 w-320 h-730 object-contain" />
+
+    <svg class="arrow-svg" data-sequence-id="6">
+      <path d="M 835 380 L 1085 380" fill="none" stroke="#7e22ce" stroke-width="4" />
+      <polygon points="1085,380 1070,373 1070,387" fill="#7e22ce" />
+    </svg>
+    <div data-sequence-id="6" class="arrow-text font-kalam text-3xl text-purple" style="top: 320px; left: 960px;">3. MCP Request</div>
+    
+    <p data-sequence-id="7" class="absolute font-kalam top-460 left-960 text-2xl w-400 text-center text-gray" style="transform: translateX(-50%);">(Discover / List / Call Tool)</p>
+
+    <svg class="arrow-svg" data-sequence-id="8">
+      <path d="M 1085 630 L 835 630" fill="none" stroke="#7e22ce" stroke-width="4" />
+      <polygon points="835,630 850,623 850,637" fill="#7e22ce" />
+    </svg>
+    <div data-sequence-id="8" class="arrow-text font-kalam text-3xl text-purple" style="top: 650px; left: 960px;">4. MCP Response</div>
+
+    <p data-sequence-id="9" class="absolute font-kalam top-690 left-960 text-2xl w-400 text-center" style="transform: translateX(-50%);">(Result / Data)</p>
+
+    <img data-sequence-id="10" src="/diagram/images/diagram/03.PNG" alt="3. MCP SERVER" class="absolute top-200 left-1100 w-340 h-700 object-contain" />
+
+    <img data-sequence-id="11" src="/diagram/images/diagram/04.PNG" alt="4. EXTERNAL TOOLS" class="absolute top-170 left-1520 w-320 h-800 object-contain" />
+
+    <svg class="arrow-svg">
+      <path data-sequence-id="12" d="M 1455 285 L 1510 285" fill="none" stroke="#000000" stroke-width="3" />
+      <path data-sequence-id="13" d="M 1455 445 L 1510 445" fill="none" stroke="#000000" stroke-width="3" />
+      <path data-sequence-id="14" d="M 1455 605 L 1510 605" fill="none" stroke="#000000" stroke-width="3" />
+      <path data-sequence-id="15" d="M 1455 765 L 1510 765" fill="none" stroke="#000000" stroke-width="3" />
+      <path data-sequence-id="16" d="M 1455 915 L 1510 915" fill="none" stroke="#000000" stroke-width="3" />
+    </svg>
+
+    <div data-sequence-id="17" data-type="eraser"></div>
+  </div>
+
+  <div id="scene-03" class="scene-container" data-scene-id="3">
+    <div class="scene-title-tag">Scene 5: Thank You</div>
+    
+    <h1 data-sequence-id="1" class="absolute font-kalam top-400 left-100 text-9xl text-blue font-bold w-1350">Thank You!</h1>
+    <p data-sequence-id="2" class="absolute font-marker top-600 left-100 text-5xl text-orange w-1350">Keep building amazing things with MCP</p>
+  </div>
+
+</body>
+</html>

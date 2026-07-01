@@ -73,7 +73,7 @@ export const Image = ({ src, alt = "Whiteboard Image", progress, className = '',
 
       {isWritingActive && (
         <Img
-          src={staticFile("/finalHandImgArt.png")}
+          src={staticFile("/images/hand/finalHandImgArt.png")}
           alt="Hand drawing image"
           style={{
             position: 'absolute',
